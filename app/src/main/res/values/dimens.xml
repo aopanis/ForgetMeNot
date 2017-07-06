@@ -6,4 +6,8 @@
     <dimen name="textSubheadingSize">16sp</dimen>
     <dimen name="textContentSize">14sp</dimen>
 
+    // Margin sizes
+    <dimen name="marginEdge">16dp</dimen>
+    <dimen name="marginContent">8dp</dimen>
+
 </resources>
