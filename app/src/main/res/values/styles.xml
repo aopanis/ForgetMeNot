@@ -7,5 +7,10 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
     </style>
+    
+    <style name="ContentText">
+        <item name="android:textSize">@dimen/textContentSize</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
 
 </resources>
