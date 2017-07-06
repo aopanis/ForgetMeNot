@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    // Text sizes
+    <dimen name="textTitleSize">20sp</dimen>
+    <dimen name="textSubheadingSize">16sp</dimen>
+    <dimen name="textContentSize">14sp</dimen>
+
+</resources>
