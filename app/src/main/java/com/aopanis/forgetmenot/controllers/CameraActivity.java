@@ -58,7 +58,7 @@ public class CameraActivity extends AppCompatActivity {
     }
     private String cameraId;
     protected CameraDevice cameraDevice;
-    protected CameraCaptureSession cameraCaptureSession;
+    protected CameraCaptureSession cameraCaptureSessions;
     protected CaptureRequest captureRequest;
     protected CaptureRequest.Builder captureRequestBuilder;
     private Size imageDimension;
@@ -249,13 +249,82 @@ public class CameraActivity extends AppCompatActivity {
                     if (cameraDevice == null){
                         return;
                     }
-
-                    this.cameraCaptureSession = cameraCaptureSession;
-
+                    cameraCaptureSessions = cameraCaptureSession;
+                    updatePreview();
                 }
-            });
-
+                @Override
+                public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession){
+                    Toast.makeText(CameraActivity.this, "Configuragtion Change", Toast.LENGTH_SHORT).show();
+                }
+            }, null);
+        }catch(CameraAccessException e){
+            Log.e(TAG, e.getStackTrace().toString());
         }
+    }
+    private void openCamera() {
+        CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+        Log.d(TAG, "Camera open");
+        try{
+            cameraId = cameraManager.getCameraIdList()[0];
+            CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
+            StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
+
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
+                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+            cameraManager.openCamera(cameraId, stateCallback, null);
+        }catch (CameraAccessException e){
+            Log.e(TAG, e.getStackTrace().toString());
+        }
+    }
+    protected void updatePreview(){
+        if (cameraDevice == null){
+            Log.e(TAG, "update Preview error");
+        }
+        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        try{
+            cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+        }catch (CameraAccessException e){
+            Log.e(TAG, e.getStackTrace().toString());
+        }
+    }
+    private void closeCamera(){
+        if (cameraDevice != null){
+            cameraDevice.close();
+            cameraDevice = null;
+        }
+        if (imageReader != null){
+            imageReader.close();
+            imageReader = null;
+        }
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
+        if (requestCode == REQUEST_CAMERA_PERMISSION) {
+            if (grantResults[0] == PackageManager.PERMISSION_DENIED){
+                Toast.makeText(CameraActivity.this, "you need to give permission to use this app", Toast.LENGTH_LONG).show();
+                finish();
+            }
+        }
+    }
+    @Override
+    public void onResume(){
+        super.onResume();
+        Log.d(TAG, "onResume");
+        startBackgroundThread();
+        if (textureView.isAvailable()){
+            openCamera();
+        }else{
+            textureView.setSurfaceTextureListener(textureListener);
+        }
+    }
+    @Override
+    public void onPause(){
+        super.onPause();
+        Log.d(TAG, "onPause");
+        stopBackgroundThread();
     }
 
 }
