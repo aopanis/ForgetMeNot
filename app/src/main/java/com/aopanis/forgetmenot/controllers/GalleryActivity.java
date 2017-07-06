@@ -111,6 +111,8 @@ public class GalleryActivity extends AppCompatActivity{
             Bitmap newBitmap = null;
             Uri uri = null;
 
+            Log.d("ImageGallery", "Initialized variables");
+
             // Get an array containing the image ID column that we want
             String[] projection = { MediaStore.Images.Thumbnails._ID };
             // Create a cursor pointing to the images
@@ -123,6 +125,8 @@ public class GalleryActivity extends AppCompatActivity{
 
             int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Thumbnails._ID);
             int size = cursor.getCount();
+
+            Log.d("ImageGallery", "Loaded images");
 
             // If size is zero, there are no images
             // TODO: Implement "no images to display" dialogue
