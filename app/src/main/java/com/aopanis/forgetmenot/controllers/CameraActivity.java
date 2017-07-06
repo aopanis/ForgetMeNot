@@ -1,4 +1,4 @@
-package com.aopanis.forgetmenot.controller;
+package com.aopanis.forgetmenot.controllers;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
