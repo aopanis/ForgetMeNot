@@ -8,7 +8,7 @@
         android:id="@+id/galleryImageItem"
         android:layout_height="128dp"
         android:layout_width="match_parent"
-        android:layout_margin="@dimen/marginEdge"
+        android:layout_margin="@dimen/marginGallery"
         android:gravity="center"
         android:adjustViewBounds="true"
         android:scaleType="centerCrop"
