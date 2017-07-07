@@ -9,5 +9,7 @@
     // Margin sizes
     <dimen name="marginEdge">16dp</dimen>
     <dimen name="marginContent">8dp</dimen>
+    <dimen name="marginGallery">2dp</dimen>
+    <dimen name="marginNone">0dp</dimen>
 
 </resources>
