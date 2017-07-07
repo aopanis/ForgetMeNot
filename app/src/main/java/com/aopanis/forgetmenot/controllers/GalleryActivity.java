@@ -18,10 +18,11 @@ import android.util.Log;
 import com.aopanis.forgetmenot.R;
 import com.aopanis.forgetmenot.adapters.ImageGalleryAdapter;
 import com.aopanis.forgetmenot.helpers.Helpers;
-
-import java.io.IOException;
+import com.bumptech.glide.Glide;
 
 public class GalleryActivity extends AppCompatActivity{
+
+    public static final String TAG = "ImageGallery";
 
     private RecyclerView recyclerView;
     private ImageGalleryAdapter imageGalleryAdapter;
@@ -34,7 +35,7 @@ public class GalleryActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gallery);
 
-        // Check for PERMISSIONS
+        // Check for permissions
         this.checkMultiplePermissions();
 
         // Retrieve reference to the RecyclerView
@@ -42,7 +43,7 @@ public class GalleryActivity extends AppCompatActivity{
         this.recyclerView.setHasFixedSize(true);
         // TODO: Replace number of columns with a setting
         this.recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
-        this.imageGalleryAdapter = new ImageGalleryAdapter(this.getApplicationContext());
+        this.imageGalleryAdapter = new ImageGalleryAdapter(Glide.with(this));
         this.recyclerView.setAdapter(this.imageGalleryAdapter);
 
         //this.loadImages();
@@ -156,7 +157,7 @@ public class GalleryActivity extends AppCompatActivity{
 
             Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
-            Log.d("ImageGallery", "Initialized variables");
+            Log.d(TAG, "Initialized variables");
 
             // Get an array containing the image ID column that we want
             String[] projection = { MediaStore.Images.Media._ID };
@@ -171,22 +172,25 @@ public class GalleryActivity extends AppCompatActivity{
             int columnIndex = cursor.getColumnIndexOrThrow( MediaStore.Images.Media._ID );
             int size = cursor.getCount();
 
-            Log.d("ImageGallery", "Loaded images");
+            Log.d(TAG, "Loaded images");
 
             // If size is zero, there are no images
             // TODO: Implement "no images to display" dialogue
             if(size == 0) {
-                Log.d("ImageGallery", "No images to display");
+                Log.d(TAG, "No images to display");
             }
 
             int imageId;
 
             // If we are not starting from the beginning, move to the position to start from
             if(startPos != -1) {
-                cursor.moveToPosition(startPos);
+                cursor.moveToPosition(cursor.getCount() - startPos);
+            }
+            else {
+                cursor.moveToPosition(cursor.getCount());
             }
 
-            while(cursor.moveToNext()) {
+            while(cursor.moveToPrevious()) {
                 imageId = cursor.getInt(columnIndex);
                 // Get the image ID based off of the index retrieved earlier
                 this.publishProgress(uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "" + imageId));
