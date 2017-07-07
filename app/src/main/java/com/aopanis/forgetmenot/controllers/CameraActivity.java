@@ -45,6 +45,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 public class CameraActivity extends AppCompatActivity {
     private static final String TAG = "CameraActivity";
     private Button captureButton;
@@ -83,6 +84,7 @@ public class CameraActivity extends AppCompatActivity {
             }
         });
     }
+
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener(){
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height){
@@ -104,6 +106,7 @@ public class CameraActivity extends AppCompatActivity {
 
         }
     };
+
     private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback(){
         @Override
         public void onOpened(CameraDevice camera){
@@ -124,6 +127,7 @@ public class CameraActivity extends AppCompatActivity {
             cameraDevice = null;
         }
     };
+
     final CameraCaptureSession.CaptureCallback captureCallbackListener = new CameraCaptureSession.CaptureCallback(){
         @Override
         public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result){
@@ -132,14 +136,17 @@ public class CameraActivity extends AppCompatActivity {
             createCameraPreview();
         }
     };
+
     protected void startBackgroundThread(){
         backgroundThread = new HandlerThread("Camera Background");
         backgroundThread.start();
         backgroundHandler = new Handler(backgroundThread.getLooper());
     }
+
     protected void stopBackgroundThread(){
         backgroundThread.quitSafely();
         try{
+            // waits for thread to stop
             backgroundThread.join();
             backgroundThread = null;
             backgroundHandler = null;
@@ -147,35 +154,41 @@ public class CameraActivity extends AppCompatActivity {
             Log.e(TAG, e.getStackTrace().toString());
         }
     }
+
     protected void capture(){
         if (cameraDevice == null){
             Log.e(TAG, "camera device is null");
             return;
         }
+        // manages camera devices
         CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
             CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraDevice.getId());
-            Size[] jpgSizes = null;
-            if (characteristics != null){
-                jpgSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
-            }
+            Size[] jpgSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG);
+            // default size
             int width = 640;
             int height = 480;
             if (jpgSizes != null && jpgSizes.length > 0){
                 width = jpgSizes[0].getWidth();
                 height = jpgSizes[0].getHeight();
             }
+            // reader to look at individual images from a surface
             ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
+            // surfaces to output image on
             List<Surface> outputSurfaces = new ArrayList<>(2);
             outputSurfaces.add(reader.getSurface());
             outputSurfaces.add(new Surface(textureView.getSurfaceTexture()));
+
+            // CaptureRequest defines parameters needed to capture an image
             final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(reader.getSurface());
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-
             int rotation = getWindowManager().getDefaultDisplay().getRotation();
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+
             final File file = new File(Environment.getExternalStorageDirectory() + "/pic.jpg");
+
+            // grabs the image and saves it to the file
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener(){
                 @Override
                 public void onImageAvailable(ImageReader reader){
@@ -209,7 +222,9 @@ public class CameraActivity extends AppCompatActivity {
                     }
                 }
             };
+            // puts the listener in my background thread
             reader.setOnImageAvailableListener(readerListener, backgroundHandler);
+            // creates a toast upon a successful capture
             final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback(){
                 @Override
                 public void onCaptureCompleted (CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result){
@@ -236,13 +251,17 @@ public class CameraActivity extends AppCompatActivity {
             Log.e(TAG, e.getStackTrace().toString());
         }
     }
+
     protected void createCameraPreview(){
         try{
             SurfaceTexture texture = textureView.getSurfaceTexture();
             texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
             Surface surface = new Surface(texture);
+            // Creating a captureRequest to be given to the active capture session
             captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             captureRequestBuilder.addTarget(surface);
+            // Creating a capture session with the appropriate surface
+            // and starting the repeating captureSession in a background thread
             cameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback(){
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession){
@@ -261,6 +280,8 @@ public class CameraActivity extends AppCompatActivity {
             Log.e(TAG, e.getStackTrace().toString());
         }
     }
+
+    // sets up the camera and asks for permissions
     private void openCamera() {
         CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         Log.d(TAG, "Camera open");
@@ -279,6 +300,7 @@ public class CameraActivity extends AppCompatActivity {
             Log.e(TAG, e.getStackTrace().toString());
         }
     }
+
     protected void updatePreview(){
         if (cameraDevice == null){
             Log.e(TAG, "update Preview error");
@@ -290,6 +312,7 @@ public class CameraActivity extends AppCompatActivity {
             Log.e(TAG, e.getStackTrace().toString());
         }
     }
+
     private void closeCamera(){
         if (cameraDevice != null){
             cameraDevice.close();
@@ -300,6 +323,8 @@ public class CameraActivity extends AppCompatActivity {
             imageReader = null;
         }
     }
+
+    // Makes a toast if they refuse our permissions
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults){
         if (requestCode == REQUEST_CAMERA_PERMISSION) {
@@ -309,6 +334,8 @@ public class CameraActivity extends AppCompatActivity {
             }
         }
     }
+
+    // Starts the background thread and opens the camera
     @Override
     public void onResume(){
         super.onResume();
@@ -320,6 +347,7 @@ public class CameraActivity extends AppCompatActivity {
             textureView.setSurfaceTextureListener(textureListener);
         }
     }
+
     @Override
     public void onPause(){
         super.onPause();
