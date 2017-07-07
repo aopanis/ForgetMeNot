@@ -6,7 +6,9 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.PermissionChecker;
 import android.util.Log;
+import android.util.Pair;
 import android.view.View;
 
 import com.aopanis.forgetmenot.R;
@@ -46,17 +48,15 @@ public abstract class PermissionsHelper {
 
         return true;
     }
-
     /**
-     * Request permissions 
-     * @param parentLayout
-     * @param activity
-     * @param requestCode
-     * @param permissions
+     * Request permissions
+     * @param parentLayout the parent layout in which to display the snackbar
+     * @param activity the activity requesting the permissions
+     * @param permissions which permissions to request
      */
-    public static void RequestPermissions(View parentLayout, final Activity activity, final int requestCode,
+    public static void RequestPermissions(View parentLayout, final Activity activity,
                                           final Permission... permissions) {
-        for(Permission permission : permissions) {
+        for(final Permission permission : permissions) {
 
             final String[] fPermission = { permission.getPermission() };
 
@@ -73,14 +73,33 @@ public abstract class PermissionsHelper {
                             @Override
                             public void onClick(View view) {
                                 ActivityCompat.requestPermissions(activity,
-                                        fPermission, requestCode);
+                                        fPermission, permission.getRequestCode());
                             }
                         })
                         .show();
             } else {
                 ActivityCompat.requestPermissions(activity,
-                        fPermission, requestCode);
+                        fPermission, permission.getRequestCode());
             }
         }
+    }
+    /**
+     * Handle the results of a permissions callback
+     * @param requestCode the requestCode passed by the callback
+     * @param grantResults the results array passed by the callback
+     * @param permissions the permissions to check against
+     * @return A pair containing the permission and whether it was granted
+     */
+    public static Pair<Permission, Boolean> HandlePermissionsCallback(int requestCode, int[] grantResults,
+                                                 Permission[] permissions) {
+        for(int i = 0; i < permissions.length; i++) {
+            if(permissions[i].getRequestCode() == requestCode) {
+                return new Pair<Permission, Boolean>(permissions[i],
+                        grantResults[0] == PackageManager.PERMISSION_GRANTED);
+            }
+        }
+
+        Log.e(TAG, "Ran permission callback on a non-passed permission.");
+        return new Pair<>(null, false);
     }
 }
