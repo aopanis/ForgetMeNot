@@ -2,6 +2,7 @@ package com.aopanis.forgetmenot.controllers;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import com.tzutalin.dlib.FaceDet;
 
 import com.aopanis.forgetmenot.R;
 
