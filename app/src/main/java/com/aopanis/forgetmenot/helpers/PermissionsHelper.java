@@ -1,11 +1,19 @@
 package com.aopanis.forgetmenot.helpers;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.util.Log;
+import android.view.View;
 
-public abstract class Helpers {
+import com.aopanis.forgetmenot.R;
+
+public abstract class PermissionsHelper {
+    private static final String TAG = "PermissionsHelper";
+
     /**
      * Check whether we have the passed permissions
      * @see android.Manifest.permission
@@ -37,5 +45,42 @@ public abstract class Helpers {
         }
 
         return true;
+    }
+
+    /**
+     * Request permissions 
+     * @param parentLayout
+     * @param activity
+     * @param requestCode
+     * @param permissions
+     */
+    public static void RequestPermissions(View parentLayout, final Activity activity, final int requestCode,
+                                          final Permission... permissions) {
+        for(Permission permission : permissions) {
+
+            final String[] fPermission = { permission.getPermission() };
+
+            if(ActivityCompat.shouldShowRequestPermissionRationale(activity,
+                    permission.getPermission())) {
+
+                // Explain that we are showing rationale for the permission
+                Log.i(TAG, "Showing rationale for " + permission.getPermission());
+
+                // Display a snackbar explaining why we need the permission
+                Snackbar.make(parentLayout, permission.getRationale(),
+                        Snackbar.LENGTH_INDEFINITE)
+                        .setAction(R.string.ok, new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                ActivityCompat.requestPermissions(activity,
+                                        fPermission, requestCode);
+                            }
+                        })
+                        .show();
+            } else {
+                ActivityCompat.requestPermissions(activity,
+                        fPermission, requestCode);
+            }
+        }
     }
 }

@@ -3,8 +3,6 @@ package com.aopanis.forgetmenot.controllers;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -17,7 +15,7 @@ import android.util.Log;
 
 import com.aopanis.forgetmenot.R;
 import com.aopanis.forgetmenot.adapters.ImageGalleryAdapter;
-import com.aopanis.forgetmenot.helpers.Helpers;
+import com.aopanis.forgetmenot.helpers.PermissionsHelper;
 import com.bumptech.glide.Glide;
 
 public class GalleryActivity extends AppCompatActivity{
@@ -51,7 +49,7 @@ public class GalleryActivity extends AppCompatActivity{
 
     private void checkMultiplePermissions() {
 
-        if(!Helpers.HasPermissions(this, PERMISSIONS)) {
+        if(!PermissionsHelper.HasPermissions(this, PERMISSIONS)) {
             ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSIONS_REQUEST);
         }
         else {
