@@ -1,19 +1,23 @@
 package com.aopanis.forgetmenot.controllers;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.provider.MediaStore;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 
 import com.aopanis.forgetmenot.R;
 import com.aopanis.forgetmenot.adapters.ImageGalleryAdapter;
+import com.aopanis.forgetmenot.helpers.Helpers;
 
 import java.io.IOException;
 
@@ -22,19 +26,61 @@ public class GalleryActivity extends AppCompatActivity{
     private RecyclerView recyclerView;
     private ImageGalleryAdapter imageGalleryAdapter;
 
+    private static final int PERMISSIONS_REQUEST = 123;
+    private static final String[] PERMISSIONS = { Manifest.permission.READ_EXTERNAL_STORAGE };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gallery);
 
+        // Check for PERMISSIONS
+        this.checkMultiplePermissions();
+
         // Retrieve reference to the RecyclerView
         this.recyclerView = (RecyclerView) this.findViewById(R.id.imageGallery);
+        this.recyclerView.setHasFixedSize(true);
         // TODO: Replace number of columns with a setting
         this.recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
         this.imageGalleryAdapter = new ImageGalleryAdapter(this.getApplicationContext());
         this.recyclerView.setAdapter(this.imageGalleryAdapter);
 
-        this.loadImages();
+        //this.loadImages();
+    }
+
+    private void checkMultiplePermissions() {
+
+        if(!Helpers.HasPermissions(this, PERMISSIONS)) {
+            ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSIONS_REQUEST);
+        }
+        else {
+            this.loadImages();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // contacts-related task you need to do.
+                    this.loadImages();
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // PERMISSIONS this app might request
+        }
     }
 
     private void loadImages() {
@@ -44,13 +90,13 @@ public class GalleryActivity extends AppCompatActivity{
             new AsyncLoadImages(this).execute();
         }
         else {
-            Bitmap[] images = (Bitmap[]) data;
+            Uri[] uris = (Uri[]) data;
 
-            if(images.length == 0) {
+            if(uris.length == 0) {
                 new AsyncLoadImages(this).execute();
             }
             else {
-                this.AddImage(images);
+                this.AddImage(uris);
 
                 // Load any leftover images
                 // Get an array containing the image ID column that we want
@@ -65,8 +111,8 @@ public class GalleryActivity extends AppCompatActivity{
 
                 int size = cursor.getCount();
 
-                if(size > images.length) {
-                    new AsyncLoadImages(this, images.length - 1).execute();
+                if(size > uris.length) {
+                    new AsyncLoadImages(this, uris.length - 1).execute();
                 }
             }
         }
@@ -75,24 +121,24 @@ public class GalleryActivity extends AppCompatActivity{
     @Override
     public Object onRetainCustomNonConfigurationInstance() {
         int imageCount = this.imageGalleryAdapter.getItemCount();
-        Bitmap[] images = new Bitmap[imageCount];
+        Uri[] uris = new Uri[imageCount];
 
         for(int i = 0; i < imageCount; i++) {
-            images[i] = this.imageGalleryAdapter.GetImage(i);
+            uris[i] = this.imageGalleryAdapter.GetUri(i);
         }
 
-        return images;
+        return uris;
     }
 
-    public void AddImage(Bitmap... image) {
-        for(int i = 0; i < image.length; i++) {
-            this.imageGalleryAdapter.AddImage(image[i]);
+    public void AddImage(Uri... uri) {
+        for(int i = 0; i < uri.length; i++) {
+            this.imageGalleryAdapter.AddImage(uri[i]);
         }
 
         this.imageGalleryAdapter.notifyDataSetChanged();
     }
 
-    protected class AsyncLoadImages extends AsyncTask<Object, Bitmap, Object> {
+    protected class AsyncLoadImages extends AsyncTask<Object, Uri, Object> {
 
         private GalleryActivity activity;
         private int startPos = -1;
@@ -107,23 +153,22 @@ public class GalleryActivity extends AppCompatActivity{
 
         @Override
         protected Object doInBackground(Object... params) {
-            Bitmap bitmap = null;
-            Bitmap newBitmap = null;
-            Uri uri = null;
+
+            Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
             Log.d("ImageGallery", "Initialized variables");
 
             // Get an array containing the image ID column that we want
-            String[] projection = { MediaStore.Images.Thumbnails._ID };
+            String[] projection = { MediaStore.Images.Media._ID };
             // Create a cursor pointing to the images
             Cursor cursor = getContentResolver().query(
-                    MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI,
+                    uri,
                     projection,
                     null,
                     null,
                     null);
 
-            int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Thumbnails._ID);
+            int columnIndex = cursor.getColumnIndexOrThrow( MediaStore.Images.Media._ID );
             int size = cursor.getCount();
 
             Log.d("ImageGallery", "Loaded images");
@@ -134,7 +179,7 @@ public class GalleryActivity extends AppCompatActivity{
                 Log.d("ImageGallery", "No images to display");
             }
 
-            int imageId = 0;
+            int imageId;
 
             // If we are not starting from the beginning, move to the position to start from
             if(startPos != -1) {
@@ -142,32 +187,19 @@ public class GalleryActivity extends AppCompatActivity{
             }
 
             while(cursor.moveToNext()) {
-                // Get the image ID based off of the index retrieved earlier
                 imageId = cursor.getInt(columnIndex);
-                uri = uri.withAppendedPath(MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI, "" + imageId);
-
-                // Attempt to load the bitmap from the uri
-                try {
-                    bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(uri));
-                    if (bitmap != null) {
-                        newBitmap = Bitmap.createScaledBitmap(bitmap, 70, 70, true);
-                        bitmap.recycle();
-                        if (newBitmap != null) {
-                            this.publishProgress(newBitmap);
-                        }
-                    }
-                } catch (IOException e) {
-                    //Error fetching image, try to recover
-                }
+                // Get the image ID based off of the index retrieved earlier
+                this.publishProgress(uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "" + imageId));
             }
 
             // Close the cursor
+            cursor.close();
 
             return null;
         }
 
         @Override
-        public void onProgressUpdate(Bitmap... value) {
+        public void onProgressUpdate(Uri... value) {
             this.activity.AddImage(value);
         }
 

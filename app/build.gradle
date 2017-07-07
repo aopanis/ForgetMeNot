@@ -19,6 +19,10 @@ android {
     }
 }
 
+repositories {
+    mavenCentral()
+}
+
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
@@ -26,6 +30,14 @@ dependencies {
     })
     compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.android.support:recyclerview-v7:25.3.1'
+    compile 'com.android.support:percent:25.3.1'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
+    compile 'com.github.bumptech.glide:glide:4.0.0-RC1'
+    compile 'com.android.support:support-v4:25.3.1'
+    compile ("com.github.bumptech.glide:recyclerview-integration:4.0.0-RC1") {
+        // Excludes the support library because it's already included by Glide.
+        transitive = false
+    }
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.0.0-RC1'
     testCompile 'junit:junit:4.12'
 }
