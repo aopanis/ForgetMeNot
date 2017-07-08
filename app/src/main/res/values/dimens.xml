@@ -12,4 +12,8 @@
     <dimen name="marginGallery">2dp</dimen>
     <dimen name="marginNone">0dp</dimen>
 
+    // Gallery stuff
+    <dimen name="locIconHeight">16dp</dimen>
+    <dimen name="locIconWidth">12dp</dimen>
+
 </resources>

@@ -28,6 +28,7 @@ public class GalleryActivity extends AppCompatActivity{
     private static final int requestCode = 100;
     private static final Permission[] permissions = {
             Permission.PERMISSION_READ_EXTERNAL_STORAGE,
+            Permission.PERMISSION_WRITE_EXTERNAL_STORAGE,
             Permission.PERMISSION_CAMERA };
 
     @Override
@@ -48,10 +49,9 @@ public class GalleryActivity extends AppCompatActivity{
     }
 
     private void checkPermissions() {
-
-        if(!PermissionsHelper.HasPermissions(this, this.permissions)) {
+        if(!PermissionsHelper.HasPermissions(this, permissions)) {
             PermissionsHelper.RequestPermissions(this.findViewById(R.id.galleryActivity),
-                    this.requestCode, this, this.permissions);
+                    requestCode, this, permissions);
         }
         else {
             this.loadImages();
@@ -60,7 +60,7 @@ public class GalleryActivity extends AppCompatActivity{
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        if(requestCode == this.requestCode) {
+        if(requestCode == requestCode) {
             for (int i = 0; i < permissions.length; i++) {
                 switch (permissions[i]) {
                     case Manifest.permission.READ_EXTERNAL_STORAGE:
@@ -93,7 +93,7 @@ public class GalleryActivity extends AppCompatActivity{
                 String[] projection = { MediaStore.Images.Thumbnails._ID };
                 // Create a cursor pointing to the images
                 Cursor cursor = getContentResolver().query(
-                        MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI,
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                         projection,
                         null,
                         null,
