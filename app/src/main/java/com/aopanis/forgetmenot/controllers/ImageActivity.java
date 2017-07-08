@@ -78,6 +78,21 @@ public class ImageActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private String getRealPathFromURI(Uri contentURI) {
+        String result;
+        Cursor cursor = getContentResolver().query(contentURI, null, null, null, null);
+        if (cursor == null) { // Source is Dropbox or other similar local file path
+            result = contentURI.getPath();
+        } else {
+            cursor.moveToFirst();
+            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
+            result = cursor.getString(idx);
+            cursor.close();
+        }
+        return result;
+    }
+
+
     protected class AsyncDetectFaces extends AsyncTask<Uri, Integer, List<VisionDetRet>> {
 
         private ImageActivity activity;
@@ -96,7 +111,8 @@ public class ImageActivity extends AppCompatActivity {
             }
 
             FaceDet detector = new FaceDet(Constants.getFaceShapeModelPath());
-            String path = params[0].getPath();
+
+            String path = getRealPathFromURI(params[0]);
             List<VisionDetRet> rets = detector.detect(path);
             Log.i(TAG, rets.toString());
             return rets;
