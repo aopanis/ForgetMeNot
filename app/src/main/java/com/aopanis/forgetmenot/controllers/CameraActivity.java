@@ -21,7 +21,6 @@ import android.media.ExifInterface;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
-<<<<<<< HEAD
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -37,11 +36,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-=======
-import com.tzutalin.dlib.FaceDet;
->>>>>>> 260fd79a745b646812d9722a5008e356be415557
-
-import com.aopanis.forgetmenot.R;
+//import com.tzutalin.dlib.FaceDet;
 import com.aopanis.forgetmenot.helpers.GPSHelper;
 
 import java.io.File;
@@ -56,6 +51,11 @@ import java.util.List;
 
 public class CameraActivity extends AppCompatActivity {
     private static final String TAG = "CameraActivity";
+    private static final String[] Permissions = {
+                                                Manifest.permission.CAMERA,
+                                                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                                Manifest.permission.ACCESS_COARSE_LOCATION,
+                                                Manifest.permission.ACCESS_FINE_LOCATION};
     private Button captureButton;
     private TextureView textureView;
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
@@ -230,7 +230,7 @@ public class CameraActivity extends AppCompatActivity {
                     exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, GPSHelper.convert(latitude));
                     exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, GPSHelper.latitudeRef(latitude));
                     exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, GPSHelper.convert(longitude));
-                    exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, GPSHelper.latitudeRef(longitude));
+                    exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, GPSHelper.longitudeRef(longitude));
                 }
 
                 private void save(byte[] bytes) throws IOException {
@@ -315,16 +315,6 @@ public class CameraActivity extends AppCompatActivity {
             CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
-
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
-                    || ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                return;
-            }
-
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                    || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                return;
-            }
             cameraManager.openCamera(cameraId, stateCallback, null);
         } catch (CameraAccessException e) {
             Log.e(TAG, e.getStackTrace().toString());
