@@ -21,6 +21,7 @@ import android.media.ExifInterface;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
+<<<<<<< HEAD
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -36,6 +37,9 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+=======
+import com.tzutalin.dlib.FaceDet;
+>>>>>>> 260fd79a745b646812d9722a5008e356be415557
 
 import com.aopanis.forgetmenot.R;
 import com.aopanis.forgetmenot.helpers.GPSHelper;
