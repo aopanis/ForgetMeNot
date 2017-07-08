@@ -40,6 +40,10 @@ dependencies {
     compile 'com.android.support:support-v4:25.3.1'
     compile 'com.android.support:design:25.3.1'
     compile "com.android.support:exifinterface:25.3.1"
+    compile("com.github.hotchemi:permissionsdispatcher:2.4.0") {
+        exclude module: "support-v13"
+    }
+    annotationProcessor "com.github.hotchemi:permissionsdispatcher-processor:2.4.0"
     annotationProcessor 'com.github.bumptech.glide:compiler:4.0.0-RC1'
     compile project(':dlib')
     testCompile 'junit:junit:4.12'
