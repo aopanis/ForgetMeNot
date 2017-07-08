@@ -221,10 +221,10 @@ public class CameraActivity extends AppCompatActivity {
                     double longitude = location.getLongitude();
                     double latitude = location.getLatitude();
                     ExifInterface exif = new ExifInterface(file.getAbsolutePath());
-                    exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, GPSHelper.convert(latitude));
-                    exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, GPSHelper.latitudeRef(latitude));
-                    exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, GPSHelper.convert(longitude));
-                    exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, GPSHelper.latitudeRef(longitude));
+                    exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, GPSHelper.convertToDms(latitude));
+                    exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, GPSHelper.latitudeRefDtS(latitude));
+                    exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, GPSHelper.convertToDms(longitude));
+                    exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, GPSHelper.latitudeRefDtS(longitude));
                 }
 
                 private void save(byte[] bytes) throws IOException {
