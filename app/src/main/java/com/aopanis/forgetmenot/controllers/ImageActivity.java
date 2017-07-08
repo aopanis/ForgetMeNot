@@ -29,6 +29,7 @@ import com.tzutalin.dlib.VisionDetRet;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import permissions.dispatcher.NeedsPermission;
 import permissions.dispatcher.OnPermissionDenied;
@@ -77,7 +78,7 @@ public class ImageActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    protected class AsyncDetectFaces extends AsyncTask<Uri, Integer, VisionDetRet[]> {
+    protected class AsyncDetectFaces extends AsyncTask<Uri, Integer, List<VisionDetRet>> {
 
         private ImageActivity activity;
 
@@ -86,9 +87,8 @@ public class ImageActivity extends AppCompatActivity {
         }
 
         @Override
-        protected VisionDetRet[] doInBackground(Uri... params) {
+        protected List<VisionDetRet> doInBackground(Uri... params) {
             Bitmap bitmap = null;
-            VisionDetRet[] rets = new VisionDetRet[0];
             try {
                 MediaStore.Images.Media.getBitmap(getContentResolver(), params[0]);
             } catch (IOException e) {
@@ -96,8 +96,9 @@ public class ImageActivity extends AppCompatActivity {
             }
 
             FaceDet detector = new FaceDet(Constants.getFaceShapeModelPath());
-            Log.i(TAG, detector.detect(bitmap).toString());
-
+            String path = params[0].getPath();
+            List<VisionDetRet> rets = detector.detect(path);
+            Log.i(TAG, rets.toString());
             return rets;
         }
 
@@ -107,7 +108,7 @@ public class ImageActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(VisionDetRet[] result) {
+        protected void onPostExecute(List<VisionDetRet> result) {
 
         }
     }
