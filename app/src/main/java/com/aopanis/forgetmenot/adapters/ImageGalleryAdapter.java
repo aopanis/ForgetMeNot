@@ -1,6 +1,7 @@
 package com.aopanis.forgetmenot.adapters;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,6 +10,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.aopanis.forgetmenot.R;
+import com.aopanis.forgetmenot.controllers.GalleryActivity;
+import com.aopanis.forgetmenot.controllers.ImageActivity;
 import com.aopanis.forgetmenot.models.GalleryImage;
 import com.aopanis.forgetmenot.views.SquareImageView;
 import com.bumptech.glide.RequestManager;
@@ -22,9 +25,11 @@ public class ImageGalleryAdapter extends RecyclerView.Adapter<ImageGalleryAdapte
 
     private ArrayList<GalleryImage> galleryImages;
     private final RequestManager glide;
+    private Context context;
 
-    public ImageGalleryAdapter(RequestManager glide, GalleryImage... images) {
+    public ImageGalleryAdapter(RequestManager glide, Context context, GalleryImage... images) {
         this.glide = glide;
+        this.context = context;
         this.galleryImages = new ArrayList<GalleryImage>();
         for(GalleryImage image : images) {
             this.galleryImages.add(image);
@@ -85,7 +90,10 @@ public class ImageGalleryAdapter extends RecyclerView.Adapter<ImageGalleryAdapte
         public void onClick(View v) {
             int position = this.getAdapterPosition();
             if(position != RecyclerView.NO_POSITION) {
-                // TODO: Handle image on click
+                GalleryImage image = galleryImages.get(position);
+                Intent intent = new Intent(context, ImageActivity.class);
+                intent.putExtra(GalleryActivity.IMAGE_EXTRA, image);
+                context.startActivity(intent);
             }
         }
     }

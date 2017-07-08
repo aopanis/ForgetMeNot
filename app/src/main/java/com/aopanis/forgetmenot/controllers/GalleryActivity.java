@@ -34,6 +34,7 @@ import permissions.dispatcher.RuntimePermissions;
 public class GalleryActivity extends AppCompatActivity {
 
     public static final String TAG = "ImageGallery";
+    public static final String IMAGE_EXTRA = "IMAGE_EXTRA";
 
     private RecyclerView recyclerView;
     private ImageGalleryAdapter imageGalleryAdapter;
@@ -50,7 +51,7 @@ public class GalleryActivity extends AppCompatActivity {
         this.recyclerView.setHasFixedSize(true);
         // TODO: Replace number of columns with a setting
         this.recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
-        this.imageGalleryAdapter = new ImageGalleryAdapter(Glide.with(this));
+        this.imageGalleryAdapter = new ImageGalleryAdapter(Glide.with(this), this);
         this.recyclerView.setAdapter(this.imageGalleryAdapter);
     }
 
@@ -120,7 +121,7 @@ public class GalleryActivity extends AppCompatActivity {
     @OnShowRationale(Manifest.permission.READ_EXTERNAL_STORAGE)
     public void showRationaleForReadExternalStorage(final PermissionRequest request) {
         new AlertDialog.Builder(this)
-                .setMessage(R.string.galleryReadExternalStorageRationale)
+                .setMessage(R.string.gallery_read_external_storage_rationale)
                 .setPositiveButton(R.string.allow, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) { request.proceed(); }
@@ -134,7 +135,7 @@ public class GalleryActivity extends AppCompatActivity {
 
     @OnPermissionDenied(Manifest.permission.READ_EXTERNAL_STORAGE)
     public void showDeniedForReadExternalStorage() {
-        Toast.makeText(this, R.string.galleryReadExternalStorageDenied, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.gallery_read_external_storage_denied, Toast.LENGTH_SHORT).show();
     }
 
     protected class AsyncLoadImages extends AsyncTask<Object, GalleryImage, Object> {
