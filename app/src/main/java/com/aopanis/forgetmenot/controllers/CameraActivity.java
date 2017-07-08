@@ -14,6 +14,9 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.location.Location;
+import android.location.LocationManager;
+import android.media.ExifInterface;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
@@ -33,6 +36,7 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import com.aopanis.forgetmenot.R;
+import com.aopanis.forgetmenot.helpers.GPSHelper;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -199,6 +203,7 @@ public class CameraActivity extends AppCompatActivity {
                         byte[] bytes = new byte[buffer.capacity()];
                         buffer.get(bytes);
                         save(bytes);
+                        addLocation();
                     } catch (FileNotFoundException e) {
                         Log.e(TAG, e.getStackTrace().toString());
                     } catch (IOException e) {
@@ -208,6 +213,18 @@ public class CameraActivity extends AppCompatActivity {
                             image.close();
                         }
                     }
+                }
+
+                private void addLocation() throws IOException{
+                    LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                    Location location = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
+                    double longitude = location.getLongitude();
+                    double latitude = location.getLatitude();
+                    ExifInterface exif = new ExifInterface(file.getAbsolutePath());
+                    exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, GPSHelper.convertToDms(latitude));
+                    exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, GPSHelper.latitudeRefDtS(latitude));
+                    exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, GPSHelper.convertToDms(longitude));
+                    exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, GPSHelper.latitudeRefDtS(longitude));
                 }
 
                 private void save(byte[] bytes) throws IOException {
@@ -294,7 +311,12 @@ public class CameraActivity extends AppCompatActivity {
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
 
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
-                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    || ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                    || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
                 return;
             }
             cameraManager.openCamera(cameraId, stateCallback, null);

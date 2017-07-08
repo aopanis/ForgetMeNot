@@ -1,99 +1,109 @@
 package com.aopanis.forgetmenot.controllers;
 
 import android.Manifest;
-import android.content.pm.PackageManager;
+import android.content.DialogInterface;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.media.ExifInterface;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.aopanis.forgetmenot.R;
 import com.aopanis.forgetmenot.adapters.ImageGalleryAdapter;
-import com.aopanis.forgetmenot.helpers.Permission;
-import com.aopanis.forgetmenot.helpers.PermissionsHelper;
+import com.aopanis.forgetmenot.models.GalleryImage;
 import com.bumptech.glide.Glide;
 
-public class GalleryActivity extends AppCompatActivity{
+import java.io.IOException;
+import java.io.InputStream;
+
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.OnPermissionDenied;
+import permissions.dispatcher.OnShowRationale;
+import permissions.dispatcher.PermissionRequest;
+import permissions.dispatcher.RuntimePermissions;
+
+@RuntimePermissions
+public class GalleryActivity extends AppCompatActivity {
 
     public static final String TAG = "ImageGallery";
+    public static final String IMAGE_EXTRA = "IMAGE_EXTRA";
 
     private RecyclerView recyclerView;
     private ImageGalleryAdapter imageGalleryAdapter;
-
-    private static final int requestCode = 100;
-    private static final Permission[] permissions = {
-            Permission.PERMISSION_READ_EXTERNAL_STORAGE,
-            Permission.PERMISSION_CAMERA };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gallery);
 
-        // Check for permissions
-        this.checkPermissions();
+        GalleryActivityPermissionsDispatcher.loadImagesWithCheck(this);
 
         // Retrieve reference to the RecyclerView
         this.recyclerView = (RecyclerView) this.findViewById(R.id.imageGallery);
         this.recyclerView.setHasFixedSize(true);
         // TODO: Replace number of columns with a setting
         this.recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
-        this.imageGalleryAdapter = new ImageGalleryAdapter(Glide.with(this));
+        this.imageGalleryAdapter = new ImageGalleryAdapter(Glide.with(this), this);
         this.recyclerView.setAdapter(this.imageGalleryAdapter);
     }
 
-    private void checkPermissions() {
+    @Override
+    public Object onRetainCustomNonConfigurationInstance() {
+        int imageCount = this.imageGalleryAdapter.getItemCount();
+        GalleryImage[] images = new GalleryImage[imageCount];
 
-        if(!PermissionsHelper.HasPermissions(this, this.permissions)) {
-            PermissionsHelper.RequestPermissions(this.findViewById(R.id.galleryActivity),
-                    this.requestCode, this, this.permissions);
+        for(int i = 0; i < imageCount; i++) {
+            images[i] = this.imageGalleryAdapter.getImage(i);
         }
-        else {
-            this.loadImages();
+
+        return images;
+    }
+
+    public void AddImage(GalleryImage... images) {
+        for(int i = 0; i < images.length; i++) {
+            this.imageGalleryAdapter.AddImage(images[i]);
         }
+
+        this.imageGalleryAdapter.notifyDataSetChanged();
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        if(requestCode == this.requestCode) {
-            for (int i = 0; i < permissions.length; i++) {
-                switch (permissions[i]) {
-                    case Manifest.permission.READ_EXTERNAL_STORAGE:
-                        if(grantResults[i] == PackageManager.PERMISSION_GRANTED) {
-                            this.loadImages();
-                        }
-                        break;
-                }
-            }
-        }
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        // NOTE: delegate the permission handling to generated method
+        GalleryActivityPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
     }
 
-    private void loadImages() {
+    @NeedsPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+    public void loadImages() {
         final Object data = this.getLastCustomNonConfigurationInstance();
 
         if(data == null) {
             new AsyncLoadImages(this).execute();
         }
         else {
-            Uri[] uris = (Uri[]) data;
+            GalleryImage[] images = (GalleryImage[]) data;
 
-            if(uris.length == 0) {
+            if(images.length == 0) {
                 new AsyncLoadImages(this).execute();
             }
             else {
-                this.AddImage(uris);
+                this.AddImage(images);
 
                 // Load any leftover images
                 // Get an array containing the image ID column that we want
                 String[] projection = { MediaStore.Images.Thumbnails._ID };
                 // Create a cursor pointing to the images
                 Cursor cursor = getContentResolver().query(
-                        MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI,
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                         projection,
                         null,
                         null,
@@ -101,34 +111,34 @@ public class GalleryActivity extends AppCompatActivity{
 
                 int size = cursor.getCount();
 
-                if(size > uris.length) {
-                    new AsyncLoadImages(this, uris.length - 1).execute();
+                if(size > images.length) {
+                    new AsyncLoadImages(this, images.length - 1).execute();
                 }
             }
         }
     }
 
-    @Override
-    public Object onRetainCustomNonConfigurationInstance() {
-        int imageCount = this.imageGalleryAdapter.getItemCount();
-        Uri[] uris = new Uri[imageCount];
-
-        for(int i = 0; i < imageCount; i++) {
-            uris[i] = this.imageGalleryAdapter.GetUri(i);
-        }
-
-        return uris;
+    @OnShowRationale(Manifest.permission.READ_EXTERNAL_STORAGE)
+    public void showRationaleForReadExternalStorage(final PermissionRequest request) {
+        new AlertDialog.Builder(this)
+                .setMessage(R.string.gallery_read_external_storage_rationale)
+                .setPositiveButton(R.string.allow, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) { request.proceed(); }
+                })
+                .setNegativeButton(R.string.deny, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) { request.cancel(); }
+                })
+                .show();
     }
 
-    public void AddImage(Uri... uri) {
-        for(int i = 0; i < uri.length; i++) {
-            this.imageGalleryAdapter.AddImage(uri[i]);
-        }
-
-        this.imageGalleryAdapter.notifyDataSetChanged();
+    @OnPermissionDenied(Manifest.permission.READ_EXTERNAL_STORAGE)
+    public void showDeniedForReadExternalStorage() {
+        Toast.makeText(this, R.string.gallery_read_external_storage_denied, Toast.LENGTH_SHORT).show();
     }
 
-    protected class AsyncLoadImages extends AsyncTask<Object, Uri, Object> {
+    protected class AsyncLoadImages extends AsyncTask<Object, GalleryImage, Object> {
 
         private GalleryActivity activity;
         private int startPos = -1;
@@ -179,10 +189,40 @@ public class GalleryActivity extends AppCompatActivity{
                 cursor.moveToPosition(cursor.getCount());
             }
 
+
             while(cursor.moveToPrevious()) {
+                Uri imageUri;
+                double imageLongitude = Double.NaN;
+                double imageLatitude = Double.NaN;
+                InputStream in = null;
+                ExifInterface exifInterface;
+
                 imageId = cursor.getInt(columnIndex);
                 // Get the image ID based off of the index retrieved earlier
-                this.publishProgress(uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "" + imageId));
+                imageUri = uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "" + imageId);
+                try {
+                    in = getContentResolver().openInputStream(imageUri);
+                    exifInterface = new ExifInterface(in);
+                    if(exifInterface.getLatLong() != null) {
+                        imageLatitude = exifInterface.getLatLong()[0];
+                        imageLongitude = exifInterface.getLatLong()[1];
+
+                        Log.d(TAG, "Image loaded with latitude and longitude: " + imageLatitude + ", " + imageLongitude);
+                    } else {
+                        imageLatitude = Double.NaN;
+                        imageLongitude = Double.NaN;
+                    }
+                } catch (IOException e) {
+                    // Handle any errors
+                } finally {
+                    if (in != null) {
+                        try {
+                            in.close();
+                        } catch (IOException ignored) {}
+                    }
+                }
+
+                this.publishProgress(new GalleryImage(imageUri, imageLatitude, imageLongitude));
             }
 
             // Close the cursor
@@ -192,7 +232,7 @@ public class GalleryActivity extends AppCompatActivity{
         }
 
         @Override
-        public void onProgressUpdate(Uri... value) {
+        public void onProgressUpdate(GalleryImage... value) {
             this.activity.AddImage(value);
         }
 

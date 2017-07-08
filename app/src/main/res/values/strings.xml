@@ -6,4 +6,15 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
     <string name="ok">OK</string>
+    <string name="allow">ALLOW</string>
+    <string name="deny">DENY</string>
+
+    // Gallery Activity
+    <string name="gallery_read_external_storage_rationale">
+        This app requires access to the external storage in order to access the photos.</string>
+    <string name="gallery_read_external_storage_denied">
+        Unable to load images: access denied.</string>
+
+    // Image Activity
+    <string name="image_activity_name">Image Actions</string>
 </resources>
