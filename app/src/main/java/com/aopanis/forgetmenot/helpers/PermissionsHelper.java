@@ -58,6 +58,7 @@ public abstract class PermissionsHelper {
                 // Explain that we are showing rationale for the permission
                 Log.i(TAG, "Showing rationale for " + permission.getPermission());
 
+                // TODO: Find a way to implement a warning that shows multiple rationales
                 // Display a snackbar explaining why we need the permission
                 Snackbar.make(parentLayout, permission.getRationale(),
                         Snackbar.LENGTH_INDEFINITE)
