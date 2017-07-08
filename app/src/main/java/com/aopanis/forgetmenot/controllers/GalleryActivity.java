@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.media.ExifInterface;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -17,6 +18,9 @@ import com.aopanis.forgetmenot.adapters.ImageGalleryAdapter;
 import com.aopanis.forgetmenot.helpers.Permission;
 import com.aopanis.forgetmenot.helpers.PermissionsHelper;
 import com.bumptech.glide.Glide;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 public class GalleryActivity extends AppCompatActivity{
 
