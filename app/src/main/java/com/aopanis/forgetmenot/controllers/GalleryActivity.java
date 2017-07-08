@@ -1,47 +1,44 @@
 package com.aopanis.forgetmenot.controllers;
 
 import android.Manifest;
-import android.content.pm.PackageManager;
+import android.content.DialogInterface;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.media.ExifInterface;
+import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.aopanis.forgetmenot.R;
 import com.aopanis.forgetmenot.adapters.ImageGalleryAdapter;
-import com.aopanis.forgetmenot.helpers.Permission;
-import com.aopanis.forgetmenot.helpers.PermissionsHelper;
 import com.bumptech.glide.Glide;
 
-import java.io.IOException;
-import java.io.InputStream;
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.OnPermissionDenied;
+import permissions.dispatcher.OnShowRationale;
+import permissions.dispatcher.PermissionRequest;
+import permissions.dispatcher.RuntimePermissions;
 
-public class GalleryActivity extends AppCompatActivity{
+@RuntimePermissions
+public class GalleryActivity extends AppCompatActivity {
 
     public static final String TAG = "ImageGallery";
 
     private RecyclerView recyclerView;
     private ImageGalleryAdapter imageGalleryAdapter;
 
-    private static final int requestCode = 100;
-    private static final Permission[] permissions = {
-            Permission.PERMISSION_READ_EXTERNAL_STORAGE,
-            Permission.PERMISSION_WRITE_EXTERNAL_STORAGE,
-            Permission.PERMISSION_CAMERA };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gallery);
 
-        // Check for permissions
-        this.checkPermissions();
+        GalleryActivityPermissionsDispatcher.loadImagesWithCheck(this);
 
         // Retrieve reference to the RecyclerView
         this.recyclerView = (RecyclerView) this.findViewById(R.id.imageGallery);
@@ -52,32 +49,35 @@ public class GalleryActivity extends AppCompatActivity{
         this.recyclerView.setAdapter(this.imageGalleryAdapter);
     }
 
-    private void checkPermissions() {
-        if(!PermissionsHelper.HasPermissions(this, permissions)) {
-            PermissionsHelper.RequestPermissions(this.findViewById(R.id.galleryActivity),
-                    requestCode, this, permissions);
+    @Override
+    public Object onRetainCustomNonConfigurationInstance() {
+        int imageCount = this.imageGalleryAdapter.getItemCount();
+        Uri[] uris = new Uri[imageCount];
+
+        for(int i = 0; i < imageCount; i++) {
+            uris[i] = this.imageGalleryAdapter.GetUri(i);
         }
-        else {
-            this.loadImages();
+
+        return uris;
+    }
+
+    public void AddImage(Uri... uri) {
+        for(int i = 0; i < uri.length; i++) {
+            this.imageGalleryAdapter.AddImage(uri[i]);
         }
+
+        this.imageGalleryAdapter.notifyDataSetChanged();
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        if(requestCode == requestCode) {
-            for (int i = 0; i < permissions.length; i++) {
-                switch (permissions[i]) {
-                    case Manifest.permission.READ_EXTERNAL_STORAGE:
-                        if(grantResults[i] == PackageManager.PERMISSION_GRANTED) {
-                            this.loadImages();
-                        }
-                        break;
-                }
-            }
-        }
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        // NOTE: delegate the permission handling to generated method
+        GalleryActivityPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
     }
 
-    private void loadImages() {
+    @NeedsPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+    public void loadImages() {
         final Object data = this.getLastCustomNonConfigurationInstance();
 
         if(data == null) {
@@ -112,24 +112,24 @@ public class GalleryActivity extends AppCompatActivity{
         }
     }
 
-    @Override
-    public Object onRetainCustomNonConfigurationInstance() {
-        int imageCount = this.imageGalleryAdapter.getItemCount();
-        Uri[] uris = new Uri[imageCount];
-
-        for(int i = 0; i < imageCount; i++) {
-            uris[i] = this.imageGalleryAdapter.GetUri(i);
-        }
-
-        return uris;
+    @OnShowRationale(Manifest.permission.READ_EXTERNAL_STORAGE)
+    public void showRationaleForReadExternalStorage(final PermissionRequest request) {
+        new AlertDialog.Builder(this)
+                .setMessage(R.string.galleryReadExternalStorageRationale)
+                .setPositiveButton(R.string.allow, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) { request.proceed(); }
+                })
+                .setNegativeButton(R.string.deny, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) { request.cancel(); }
+                })
+                .show();
     }
 
-    public void AddImage(Uri... uri) {
-        for(int i = 0; i < uri.length; i++) {
-            this.imageGalleryAdapter.AddImage(uri[i]);
-        }
-
-        this.imageGalleryAdapter.notifyDataSetChanged();
+    @OnPermissionDenied(Manifest.permission.READ_EXTERNAL_STORAGE)
+    public void showDeniedForReadExternalStorage() {
+        Toast.makeText(this, R.string.galleryReadExternalStorageDenied, Toast.LENGTH_SHORT).show();
     }
 
     protected class AsyncLoadImages extends AsyncTask<Object, Uri, Object> {

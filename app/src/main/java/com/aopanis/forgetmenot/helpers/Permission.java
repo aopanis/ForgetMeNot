@@ -2,21 +2,28 @@ package com.aopanis.forgetmenot.helpers;
 
 import android.Manifest;
 
+@Deprecated
 public class Permission {
+    @Deprecated
     private String permission;
+    @Deprecated
     public String getPermission() {
         return this.permission;
     }
+    @Deprecated
     private String rationale;
+    @Deprecated
     public String getRationale() {
         return this.rationale;
     }
 
+    @Deprecated
     public Permission(String permission, String rationale) {
         this.permission = permission;
         this.rationale = rationale;
     }
 
+    @Deprecated
     public void SetRationale(String value) {
         this.rationale = value;
     }
