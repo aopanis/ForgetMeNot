@@ -222,7 +222,7 @@ public class GalleryActivity extends AppCompatActivity {
                     }
                 }
 
-                this.publishProgress(new GalleryImage(imageUri, imageLatitude, imageLongitude));
+                this.publishProgress(new GalleryImage(imageUri, imageLatitude, imageLongitude, imageId));
             }
 
             // Close the cursor

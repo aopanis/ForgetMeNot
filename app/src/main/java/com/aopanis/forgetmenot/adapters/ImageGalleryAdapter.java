@@ -28,12 +28,18 @@ public class ImageGalleryAdapter extends RecyclerView.Adapter<ImageGalleryAdapte
     private Context context;
 
     public ImageGalleryAdapter(RequestManager glide, Context context, GalleryImage... images) {
+        this.setHasStableIds(true);
         this.glide = glide;
         this.context = context;
         this.galleryImages = new ArrayList<GalleryImage>();
         for(GalleryImage image : images) {
             this.galleryImages.add(image);
         }
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return this.galleryImages.get(position).getId();
     }
 
     public void AddImage(GalleryImage image) {

@@ -8,28 +8,32 @@ public class GalleryImage implements Parcelable{
 
     private String uri;
     private double latitude, longitude;
+    private long id;
 
-    public GalleryImage(String uri, double latitude, double longitude) {
+    public GalleryImage(String uri, double latitude, double longitude, long id) {
         this.uri = uri;
         this.latitude = latitude;
         this.longitude = longitude;
+        this.id = id;
     }
-    public GalleryImage(Uri uri, double latitude, double longitude) {
+    public GalleryImage(Uri uri, double latitude, double longitude, long id) {
         this.uri = uri.toString();
         this.latitude = latitude;
         this.longitude = longitude;
+        this.id = id;
     }
-    public GalleryImage(String uri) {
-        this(uri, Double.NaN, Double.NaN);
+    public GalleryImage(String uri, long id) {
+        this(uri, Double.NaN, Double.NaN, id);
     }
-    public GalleryImage(Uri uri) {
-        this(uri, Double.NaN, Double.NaN);
+    public GalleryImage(Uri uri, long id) {
+        this(uri, Double.NaN, Double.NaN, id);
     }
 
     protected GalleryImage(Parcel in) {
         this.uri = in.readString();
         this.latitude = in.readDouble();
         this.longitude = in.readDouble();
+        this.id = in.readLong();
     }
 
     public static final Creator<GalleryImage> CREATOR = new Creator<GalleryImage>() {
@@ -62,6 +66,12 @@ public class GalleryImage implements Parcelable{
     public void setLongitude(Double value) {
         this.longitude = value;
     }
+    public long getId() {
+        return this.id;
+    }
+    public void setId(long value) {
+        this.id = value;
+    }
 
     @Override
     public int describeContents() {
@@ -73,5 +83,6 @@ public class GalleryImage implements Parcelable{
         dest.writeString(this.uri);
         dest.writeDouble(this.latitude);
         dest.writeDouble(this.longitude);
+        dest.writeLong(this.id);
     }
 }
