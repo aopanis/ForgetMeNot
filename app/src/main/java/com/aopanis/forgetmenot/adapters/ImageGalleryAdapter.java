@@ -1,15 +1,16 @@
 package com.aopanis.forgetmenot.adapters;
 
 import android.content.Context;
-import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.aopanis.forgetmenot.R;
 import com.aopanis.forgetmenot.models.GalleryImage;
+import com.aopanis.forgetmenot.views.SquareImageView;
 import com.bumptech.glide.RequestManager;
 
 import java.util.ArrayList;
@@ -30,11 +31,11 @@ public class ImageGalleryAdapter extends RecyclerView.Adapter<ImageGalleryAdapte
         }
     }
 
-    public void AddImage(Uri uri) {
-        this.galleryImages.add(new GalleryImage(uri));
+    public void AddImage(GalleryImage image) {
+        this.galleryImages.add(image);
     }
-    public Uri GetUri(int position) {
-        return this.galleryImages.get(position).GetUri();
+    public GalleryImage getImage(int position) {
+        return this.galleryImages.get(position);
     }
 
     @Override
@@ -49,10 +50,17 @@ public class ImageGalleryAdapter extends RecyclerView.Adapter<ImageGalleryAdapte
     @Override
     public void onBindViewHolder(ImageHolder holder, int position) {
         GalleryImage galleryImage = this.galleryImages.get(position);
-        ImageView imageView = holder.imageView;
+        SquareImageView imageView = holder.imageView;
+        ImageView locationView = holder.locationView;
 
-        this.glide.load(galleryImage.GetUri())
+        this.glide.load(galleryImage.getUri())
                 .into(imageView);
+
+        // Set the visibility of the location icon based on whether there is
+        // location data for this image
+        locationView.setVisibility(
+                galleryImage.getLatitude() != null && galleryImage.getLongitude() != null ?
+                View.VISIBLE : View.INVISIBLE);
     }
 
     @Override
@@ -61,13 +69,15 @@ public class ImageGalleryAdapter extends RecyclerView.Adapter<ImageGalleryAdapte
     }
 
     public class ImageHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-
         // Reference to ImageView to hold on to
-        private ImageView imageView;
+        private SquareImageView imageView;
+        private ImageView locationView;
 
         public ImageHolder(View itemView) {
             super(itemView);
-            this.imageView = (ImageView) itemView.findViewById(R.id.galleryImageItem);
+            this.imageView = (SquareImageView) itemView.findViewById(R.id.galleryImageItem);
+            this.locationView = (ImageView) itemView.findViewById(R.id.galleryLocationIconItem);
+
             itemView.setOnClickListener(this);
         }
 

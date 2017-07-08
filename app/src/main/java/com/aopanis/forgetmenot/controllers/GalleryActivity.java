@@ -8,6 +8,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.media.ExifInterface;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
@@ -17,7 +18,11 @@ import android.widget.Toast;
 
 import com.aopanis.forgetmenot.R;
 import com.aopanis.forgetmenot.adapters.ImageGalleryAdapter;
+import com.aopanis.forgetmenot.models.GalleryImage;
 import com.bumptech.glide.Glide;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 import permissions.dispatcher.NeedsPermission;
 import permissions.dispatcher.OnPermissionDenied;
@@ -52,18 +57,18 @@ public class GalleryActivity extends AppCompatActivity {
     @Override
     public Object onRetainCustomNonConfigurationInstance() {
         int imageCount = this.imageGalleryAdapter.getItemCount();
-        Uri[] uris = new Uri[imageCount];
+        GalleryImage[] images = new GalleryImage[imageCount];
 
         for(int i = 0; i < imageCount; i++) {
-            uris[i] = this.imageGalleryAdapter.GetUri(i);
+            images[i] = this.imageGalleryAdapter.getImage(i);
         }
 
-        return uris;
+        return images;
     }
 
-    public void AddImage(Uri... uri) {
-        for(int i = 0; i < uri.length; i++) {
-            this.imageGalleryAdapter.AddImage(uri[i]);
+    public void AddImage(GalleryImage... images) {
+        for(int i = 0; i < images.length; i++) {
+            this.imageGalleryAdapter.AddImage(images[i]);
         }
 
         this.imageGalleryAdapter.notifyDataSetChanged();
@@ -84,13 +89,13 @@ public class GalleryActivity extends AppCompatActivity {
             new AsyncLoadImages(this).execute();
         }
         else {
-            Uri[] uris = (Uri[]) data;
+            GalleryImage[] images = (GalleryImage[]) data;
 
-            if(uris.length == 0) {
+            if(images.length == 0) {
                 new AsyncLoadImages(this).execute();
             }
             else {
-                this.AddImage(uris);
+                this.AddImage(images);
 
                 // Load any leftover images
                 // Get an array containing the image ID column that we want
@@ -105,8 +110,8 @@ public class GalleryActivity extends AppCompatActivity {
 
                 int size = cursor.getCount();
 
-                if(size > uris.length) {
-                    new AsyncLoadImages(this, uris.length - 1).execute();
+                if(size > images.length) {
+                    new AsyncLoadImages(this, images.length - 1).execute();
                 }
             }
         }
@@ -132,7 +137,7 @@ public class GalleryActivity extends AppCompatActivity {
         Toast.makeText(this, R.string.galleryReadExternalStorageDenied, Toast.LENGTH_SHORT).show();
     }
 
-    protected class AsyncLoadImages extends AsyncTask<Object, Uri, Object> {
+    protected class AsyncLoadImages extends AsyncTask<Object, GalleryImage, Object> {
 
         private GalleryActivity activity;
         private int startPos = -1;
@@ -183,10 +188,37 @@ public class GalleryActivity extends AppCompatActivity {
                 cursor.moveToPosition(cursor.getCount());
             }
 
+
             while(cursor.moveToPrevious()) {
+                Uri imageUri;
+                Double imageLongitude = null;
+                Double imageLatitude = null;
+                InputStream in = null;
+                ExifInterface exifInterface;
+
                 imageId = cursor.getInt(columnIndex);
                 // Get the image ID based off of the index retrieved earlier
-                this.publishProgress(uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "" + imageId));
+                imageUri = uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "" + imageId);
+                try {
+                    in = getContentResolver().openInputStream(imageUri);
+                    exifInterface = new ExifInterface(in);
+                    if(exifInterface.getLatLong() != null) {
+                        imageLatitude = exifInterface.getLatLong()[0];
+                        imageLongitude = exifInterface.getLatLong()[1];
+
+                        Log.d(TAG, "Image loaded with latitude and longitude: " + imageLatitude + ", " + imageLongitude);
+                    }
+                } catch (IOException e) {
+                    // Handle any errors
+                } finally {
+                    if (in != null) {
+                        try {
+                            in.close();
+                        } catch (IOException ignored) {}
+                    }
+                }
+
+                this.publishProgress(new GalleryImage(imageUri, imageLatitude, imageLongitude));
             }
 
             // Close the cursor
@@ -196,7 +228,7 @@ public class GalleryActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onProgressUpdate(Uri... value) {
+        public void onProgressUpdate(GalleryImage... value) {
             this.activity.AddImage(value);
         }
 
