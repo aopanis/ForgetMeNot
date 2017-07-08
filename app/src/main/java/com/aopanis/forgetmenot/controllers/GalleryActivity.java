@@ -192,8 +192,8 @@ public class GalleryActivity extends AppCompatActivity {
 
             while(cursor.moveToPrevious()) {
                 Uri imageUri;
-                Double imageLongitude = null;
-                Double imageLatitude = null;
+                double imageLongitude = Double.NaN;
+                double imageLatitude = Double.NaN;
                 InputStream in = null;
                 ExifInterface exifInterface;
 
@@ -208,6 +208,9 @@ public class GalleryActivity extends AppCompatActivity {
                         imageLongitude = exifInterface.getLatLong()[1];
 
                         Log.d(TAG, "Image loaded with latitude and longitude: " + imageLatitude + ", " + imageLongitude);
+                    } else {
+                        imageLatitude = Double.NaN;
+                        imageLongitude = Double.NaN;
                     }
                 } catch (IOException e) {
                     // Handle any errors

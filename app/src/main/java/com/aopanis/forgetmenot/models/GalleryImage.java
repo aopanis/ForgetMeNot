@@ -7,23 +7,23 @@ import android.os.Parcelable;
 public class GalleryImage implements Parcelable{
 
     private String uri;
-    private Double latitude, longitude;
+    private double latitude, longitude;
 
-    public GalleryImage(String uri, Double latitude, Double longitude) {
+    public GalleryImage(String uri, double latitude, double longitude) {
         this.uri = uri;
         this.latitude = latitude;
         this.longitude = longitude;
     }
-    public GalleryImage(Uri uri, Double latitude, Double longitude) {
+    public GalleryImage(Uri uri, double latitude, double longitude) {
         this.uri = uri.toString();
         this.latitude = latitude;
         this.longitude = longitude;
     }
     public GalleryImage(String uri) {
-        this(uri, null, null);
+        this(uri, Double.NaN, Double.NaN);
     }
     public GalleryImage(Uri uri) {
-        this(uri, null, null);
+        this(uri, Double.NaN, Double.NaN);
     }
 
     protected GalleryImage(Parcel in) {

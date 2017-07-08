@@ -64,8 +64,8 @@ public class ImageGalleryAdapter extends RecyclerView.Adapter<ImageGalleryAdapte
         // Set the visibility of the location icon based on whether there is
         // location data for this image
         locationView.setVisibility(
-                galleryImage.getLatitude() != null && galleryImage.getLongitude() != null ?
-                View.VISIBLE : View.INVISIBLE);
+                galleryImage.getLatitude().isNaN() && galleryImage.getLongitude().isNaN() ?
+                View.INVISIBLE : View.VISIBLE);
     }
 
     @Override
