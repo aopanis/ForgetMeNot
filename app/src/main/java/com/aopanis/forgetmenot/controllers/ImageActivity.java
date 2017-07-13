@@ -1,19 +1,26 @@
 package com.aopanis.forgetmenot.controllers;
 
 import android.Manifest;
+import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.MediaStore;
 import android.support.annotation.RequiresPermission;
+import android.support.constraint.ConstraintLayout;
 import android.support.media.ExifInterface;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.aopanis.forgetmenot.R;
@@ -50,9 +57,9 @@ public class ImageActivity extends AppCompatActivity {
         ImageView imageView = (ImageView) this.findViewById(R.id.imageActionView);
         this.displayedImage = this.getIntent().getParcelableExtra(GalleryActivity.IMAGE_EXTRA);
 
-        RequestBuilder<Bitmap> requestBuilder = Glide.with(this).asBitmap()
-                .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.RESOURCE));
-        requestBuilder.load(this.displayedImage.getUri()).into(imageView);
+//        RequestBuilder<Bitmap> requestBuilder = Glide.with(this).asBitmap()
+//                .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.RESOURCE));
+//        requestBuilder.load(this.displayedImage.getUri()).into(imageView);
 
         ImageActivityPermissionsDispatcher.DetectFacesWithCheck(this);
     }
@@ -96,6 +103,8 @@ public class ImageActivity extends AppCompatActivity {
     protected class AsyncDetectFaces extends AsyncTask<Uri, Integer, List<VisionDetRet>> {
 
         private ImageActivity activity;
+        private Bitmap bitmap = null;
+        private Bitmap tempBm;
 
         public AsyncDetectFaces(ImageActivity activity) {
             this.activity = activity;
@@ -103,18 +112,30 @@ public class ImageActivity extends AppCompatActivity {
 
         @Override
         protected List<VisionDetRet> doInBackground(Uri... params) {
-            Bitmap bitmap = null;
+            FaceDet detector = new FaceDet(Constants.getFaceShapeModelPath());
+
+            String path = getRealPathFromURI(params[0]);
+
             try {
-                MediaStore.Images.Media.getBitmap(getContentResolver(), params[0]);
+                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), params[0]);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-            FaceDet detector = new FaceDet(Constants.getFaceShapeModelPath());
+            Paint p = new Paint();
+            p.setStyle(Paint.Style.STROKE);
+            p.setStrokeWidth(10);
+            p.setARGB(255,255,255,255);
+            tempBm = bitmap.copy(bitmap.getConfig(), true);
+            Canvas canvas = new Canvas(tempBm);
 
-            String path = getRealPathFromURI(params[0]);
             List<VisionDetRet> rets = detector.detect(path);
-            Log.i(TAG, rets.toString());
+            for(int i=0; i < rets.size(); i++) {
+                VisionDetRet temp = rets.get(i);
+                canvas.drawRect(temp.getLeft(), temp.getTop(), temp.getRight(), temp.getBottom(), p);
+            }
+
+            Log.i(TAG, Integer.toString(rets.get(0).getBottom()));
             return rets;
         }
 
@@ -125,6 +146,26 @@ public class ImageActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<VisionDetRet> result) {
+            RelativeLayout imageLayout = (RelativeLayout) activity.findViewById(R.id.imageActionLayout);
+            ImageView imageView = (ImageView) activity.findViewById(R.id.imageActionView);
+            imageView.setImageBitmap(tempBm);
+
+            for(int i=0; i<result.size(); i++) {
+                Button b = new Button(activity);
+                b.setX(result.get(i).getLeft());
+                b.setY(result.get(i).getTop());
+                b.setWidth(result.get(i).getRight()-result.get(i).getLeft());
+                b.setHeight(result.get(i).getBottom()-result.get(i).getTop());
+                b.setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v){
+                        Intent intent = new Intent(activity, PersonActivity.class);
+                        startActivity(intent);
+                    }
+                });
+                imageLayout.addView(b);
+            }
+
+            Toast.makeText(activity, "Done", Toast.LENGTH_SHORT).show();
 
         }
     }
