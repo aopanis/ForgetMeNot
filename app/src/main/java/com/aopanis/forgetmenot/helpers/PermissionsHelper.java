@@ -14,10 +14,12 @@ import com.aopanis.forgetmenot.R;
 
 import java.util.ArrayList;
 
+@Deprecated
 public abstract class PermissionsHelper {
 
     private static final String TAG = "PermissionsHelper";
 
+    @Deprecated
     /**
      * Check whether we have the passed permissions
      * @see android.Manifest.permission
@@ -37,6 +39,7 @@ public abstract class PermissionsHelper {
         }
         return true;
     }
+    @Deprecated
     /**
      * Request permissions
      * @param parentLayout the parent layout in which to display the snackbar
