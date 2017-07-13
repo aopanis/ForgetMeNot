@@ -1,5 +1,9 @@
 package com.aopanis.forgetmenot.helpers;
 
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.maps.android.SphericalUtil;
+
 /**
  * Created by malcolm on 7/7/2017.
  */
@@ -86,5 +90,27 @@ public class GPSHelper {
         result = degrees + (minutes / 60) + (seconds / 3600);
 
         return result;
+    }
+
+    /**
+     * Convert a LatLng and a radius to a LatLngBounds
+     * @param center the LatLng representation of the center
+     * @param radius the radius to use
+     * @return The LatLngBounds object desired
+     */
+    public static final LatLngBounds toBounds(LatLng center, double radius) {
+        LatLng southwest = SphericalUtil.computeOffset(center, radius * Math.sqrt(2.0), 225);
+        LatLng northeast = SphericalUtil.computeOffset(center, radius * Math.sqrt(2.0), 45);
+        return new LatLngBounds(southwest, northeast);
+    }
+    /**
+     * Convert a latitude, longitude and a radius to a LatLngBounds
+     * @param lat the latitude of the center
+     * @param lon the longitude of the center
+     * @param radius the radius to use
+     * @return The LatLngBounds object desired
+     */
+    public static final LatLngBounds toBounds(double lat, double lon, double radius) {
+        return toBounds(new LatLng(lat, lon), radius);
     }
 }

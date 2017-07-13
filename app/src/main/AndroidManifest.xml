@@ -36,6 +36,9 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".controllers.GalleryActivity" />
         </activity>
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyB7MgV7b-_B7YjzG2ZkEFLcJvr8dzT8hAU"/>
     </application>
 
 </manifest>

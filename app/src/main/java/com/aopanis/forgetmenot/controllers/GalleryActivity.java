@@ -56,6 +56,13 @@ public class GalleryActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+
+        this.imageGalleryAdapter.notifyDataSetChanged();
+    }
+
+    @Override
     public Object onRetainCustomNonConfigurationInstance() {
         int imageCount = this.imageGalleryAdapter.getItemCount();
         GalleryImage[] images = new GalleryImage[imageCount];

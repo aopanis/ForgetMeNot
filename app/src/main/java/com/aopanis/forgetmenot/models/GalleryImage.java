@@ -1,8 +1,16 @@
 package com.aopanis.forgetmenot.models;
 
+import android.content.Context;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.media.ExifInterface;
+
+import com.aopanis.forgetmenot.helpers.FileHelper;
+import com.aopanis.forgetmenot.helpers.GPSHelper;
+
+import java.io.File;
+import java.io.IOException;
 
 public class GalleryImage implements Parcelable{
 
@@ -57,20 +65,56 @@ public class GalleryImage implements Parcelable{
     public Double getLatitude() {
         return this.latitude;
     }
-    public void setLatitude(Double value) {
+    public void setLatitude(Double value, Context context) {
         this.latitude = value;
+
+        ExifInterface exifInterface = this.getExif(context);
+        exifInterface.setAttribute(android.media.ExifInterface.TAG_GPS_LATITUDE,
+                GPSHelper.convertToDms(this.latitude));
+        exifInterface.setAttribute(android.media.ExifInterface.TAG_GPS_LATITUDE_REF,
+                GPSHelper.latitudeRefDtS(this.latitude));
+        try {
+            exifInterface.saveAttributes();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
     public Double getLongitude() {
         return this.longitude;
     }
-    public void setLongitude(Double value) {
+    public void setLongitude(Double value, Context context) {
         this.longitude = value;
+
+        ExifInterface exifInterface = this.getExif(context);
+        exifInterface.setAttribute(android.media.ExifInterface.TAG_GPS_LONGITUDE,
+                GPSHelper.convertToDms(this.longitude));
+        exifInterface.setAttribute(android.media.ExifInterface.TAG_GPS_LONGITUDE_REF,
+                GPSHelper.latitudeRefDtS(this.longitude));
+        try {
+            exifInterface.saveAttributes();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
     public long getId() {
         return this.id;
     }
     public void setId(long value) {
         this.id = value;
+    }
+    public ExifInterface getExif (Context context) {
+        ExifInterface exifInterface = null;
+        try {
+            exifInterface = new ExifInterface(FileHelper.getRealPathFromURI(this.getUri(), context));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return exifInterface;
+    }
+
+    private File getFile() {
+        return new File(this.getUri().getPath());
     }
 
     @Override
