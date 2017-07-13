@@ -48,8 +48,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.RuntimePermissions;
+
+@RuntimePermissions
 public class CameraActivity extends AppCompatActivity {
     private static final String TAG = "CameraActivity";
+    private static final String[] Permissions = {
+                                                Manifest.permission.CAMERA,
+                                                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                                Manifest.permission.ACCESS_COARSE_LOCATION,
+                                                Manifest.permission.ACCESS_FINE_LOCATION};
     private Button captureButton;
     private TextureView textureView;
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
@@ -84,7 +93,7 @@ public class CameraActivity extends AppCompatActivity {
         captureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                capture();
+                CameraActivityPermissionsDispatcher.captureWithCheck(CameraActivity.this);
             }
         });
     }
@@ -92,7 +101,7 @@ public class CameraActivity extends AppCompatActivity {
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-            openCamera();
+            CameraActivityPermissionsDispatcher.openCameraWithCheck(CameraActivity.this);
         }
 
         @Override
@@ -159,7 +168,9 @@ public class CameraActivity extends AppCompatActivity {
         }
     }
 
-    protected void capture() {
+    @NeedsPermission({Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE})
+    public void capture() {
         if (cameraDevice == null) {
             Log.e(TAG, "camera device is null");
             return;
@@ -203,7 +214,7 @@ public class CameraActivity extends AppCompatActivity {
                         byte[] bytes = new byte[buffer.capacity()];
                         buffer.get(bytes);
                         save(bytes);
-                        addLocation();
+                        //addLocation();
                     } catch (FileNotFoundException e) {
                         Log.e(TAG, e.getStackTrace().toString());
                     } catch (IOException e) {
@@ -215,16 +226,20 @@ public class CameraActivity extends AppCompatActivity {
                     }
                 }
 
-                private void addLocation() throws IOException{
+                public void addLocation() throws IOException{
                     LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-                    Location location = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
-                    double longitude = location.getLongitude();
-                    double latitude = location.getLatitude();
-                    ExifInterface exif = new ExifInterface(file.getAbsolutePath());
-                    exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, GPSHelper.convertToDms(latitude));
-                    exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, GPSHelper.latitudeRefDtS(latitude));
-                    exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, GPSHelper.convertToDms(longitude));
-                    exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, GPSHelper.latitudeRefDtS(longitude));
+                    try {
+                        Location location = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
+                        double longitude = location.getLongitude();
+                        double latitude = location.getLatitude();
+                        ExifInterface exif = new ExifInterface(file.getAbsolutePath());
+                        exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, GPSHelper.convertToDms(latitude));
+                        exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, GPSHelper.latitudeRefDtS(latitude));
+                        exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, GPSHelper.convertToDms(longitude));
+                        exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, GPSHelper.latitudeRefDtS(longitude));
+                    }catch(SecurityException e){
+                        Log.e(TAG, e.getStackTrace().toString());
+                    }
                 }
 
                 private void save(byte[] bytes) throws IOException {
@@ -301,7 +316,8 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     // sets up the camera and asks for permissions
-    private void openCamera() {
+    @NeedsPermission(Manifest.permission.CAMERA)
+    public void openCamera() {
         CameraManager cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         Log.d(TAG, "Camera open");
         try {
@@ -309,18 +325,10 @@ public class CameraActivity extends AppCompatActivity {
             CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraId);
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
-
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED
-                    || ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                return;
-            }
-
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                    || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-                return;
-            }
             cameraManager.openCamera(cameraId, stateCallback, null);
         } catch (CameraAccessException e) {
+            Log.e(TAG, e.getStackTrace().toString());
+        } catch (SecurityException e){
             Log.e(TAG, e.getStackTrace().toString());
         }
     }
@@ -351,13 +359,11 @@ public class CameraActivity extends AppCompatActivity {
     // Makes a toast if they refuse our permissions
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == REQUEST_CAMERA_PERMISSION) {
-            if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
-                Toast.makeText(CameraActivity.this, "you need to give permission to use this app", Toast.LENGTH_LONG).show();
-                finish();
-            }
-        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        // NOTE: delegate the permission handling to generated method
+        CameraActivityPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
     }
+
 
     // Starts the background thread and opens the camera
     @Override
@@ -366,7 +372,7 @@ public class CameraActivity extends AppCompatActivity {
         Log.d(TAG, "onResume");
         startBackgroundThread();
         if (textureView.isAvailable()) {
-            openCamera();
+            CameraActivityPermissionsDispatcher.openCameraWithCheck(this);
         } else {
             textureView.setSurfaceTextureListener(textureListener);
         }
