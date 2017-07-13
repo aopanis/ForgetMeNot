@@ -3,13 +3,11 @@ package com.aopanis.forgetmenot.controllers;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.v4.app.ActivityCompat;
+import android.support.media.ExifInterface;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -17,8 +15,12 @@ import android.util.Log;
 
 import com.aopanis.forgetmenot.R;
 import com.aopanis.forgetmenot.adapters.ImageGalleryAdapter;
-import com.aopanis.forgetmenot.helpers.Helpers;
+import com.aopanis.forgetmenot.helpers.Permission;
+import com.aopanis.forgetmenot.helpers.PermissionsHelper;
 import com.bumptech.glide.Glide;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 public class GalleryActivity extends AppCompatActivity{
 
@@ -27,8 +29,11 @@ public class GalleryActivity extends AppCompatActivity{
     private RecyclerView recyclerView;
     private ImageGalleryAdapter imageGalleryAdapter;
 
-    private static final int PERMISSIONS_REQUEST = 123;
-    private static final String[] PERMISSIONS = { Manifest.permission.READ_EXTERNAL_STORAGE };
+    private static final int requestCode = 100;
+    private static final Permission[] permissions = {
+            Permission.PERMISSION_READ_EXTERNAL_STORAGE,
+            Permission.PERMISSION_WRITE_EXTERNAL_STORAGE,
+            Permission.PERMISSION_CAMERA };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +41,7 @@ public class GalleryActivity extends AppCompatActivity{
         setContentView(R.layout.activity_gallery);
 
         // Check for permissions
-        this.checkMultiplePermissions();
+        this.checkPermissions();
 
         // Retrieve reference to the RecyclerView
         this.recyclerView = (RecyclerView) this.findViewById(R.id.imageGallery);
@@ -45,14 +50,12 @@ public class GalleryActivity extends AppCompatActivity{
         this.recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
         this.imageGalleryAdapter = new ImageGalleryAdapter(Glide.with(this));
         this.recyclerView.setAdapter(this.imageGalleryAdapter);
-
-        //this.loadImages();
     }
 
-    private void checkMultiplePermissions() {
-
-        if(!Helpers.HasPermissions(this, PERMISSIONS)) {
-            ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSIONS_REQUEST);
+    private void checkPermissions() {
+        if(!PermissionsHelper.HasPermissions(this, permissions)) {
+            PermissionsHelper.RequestPermissions(this.findViewById(R.id.galleryActivity),
+                    requestCode, this, permissions);
         }
         else {
             this.loadImages();
@@ -61,26 +64,16 @@ public class GalleryActivity extends AppCompatActivity{
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
-
-                    // permission was granted, yay! Do the
-                    // contacts-related task you need to do.
-                    this.loadImages();
-
-                } else {
-
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
+        if(requestCode == requestCode) {
+            for (int i = 0; i < permissions.length; i++) {
+                switch (permissions[i]) {
+                    case Manifest.permission.READ_EXTERNAL_STORAGE:
+                        if(grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                            this.loadImages();
+                        }
+                        break;
                 }
-                return;
             }
-
-            // other 'case' lines to check for other
-            // PERMISSIONS this app might request
         }
     }
 
@@ -104,7 +97,7 @@ public class GalleryActivity extends AppCompatActivity{
                 String[] projection = { MediaStore.Images.Thumbnails._ID };
                 // Create a cursor pointing to the images
                 Cursor cursor = getContentResolver().query(
-                        MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI,
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                         projection,
                         null,
                         null,

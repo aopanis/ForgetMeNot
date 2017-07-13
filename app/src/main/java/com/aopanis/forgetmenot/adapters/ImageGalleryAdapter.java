@@ -24,7 +24,7 @@ public class ImageGalleryAdapter extends RecyclerView.Adapter<ImageGalleryAdapte
 
     public ImageGalleryAdapter(RequestManager glide, GalleryImage... images) {
         this.glide = glide;
-        this.galleryImages = new ArrayList<GalleryImage>(0);
+        this.galleryImages = new ArrayList<GalleryImage>();
         for(GalleryImage image : images) {
             this.galleryImages.add(image);
         }

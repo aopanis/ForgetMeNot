@@ -3,7 +3,6 @@ package com.aopanis.forgetmenot.controllers;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Camera;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -30,13 +29,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
-import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+<<<<<<< HEAD
 //import com.tzutalin.dlib.FaceDet;
+=======
+
+import com.aopanis.forgetmenot.R;
+>>>>>>> cc61e416bfd3c34d0db20fa9802cdcd44bcde450
 import com.aopanis.forgetmenot.helpers.GPSHelper;
 
 import java.io.File;
@@ -227,10 +230,17 @@ public class CameraActivity extends AppCompatActivity {
                     double longitude = location.getLongitude();
                     double latitude = location.getLatitude();
                     ExifInterface exif = new ExifInterface(file.getAbsolutePath());
+<<<<<<< HEAD
                     exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, GPSHelper.convert(latitude));
                     exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, GPSHelper.latitudeRef(latitude));
                     exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, GPSHelper.convert(longitude));
                     exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, GPSHelper.longitudeRef(longitude));
+=======
+                    exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, GPSHelper.convertToDms(latitude));
+                    exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, GPSHelper.latitudeRefDtS(latitude));
+                    exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, GPSHelper.convertToDms(longitude));
+                    exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, GPSHelper.latitudeRefDtS(longitude));
+>>>>>>> cc61e416bfd3c34d0db20fa9802cdcd44bcde450
                 }
 
                 private void save(byte[] bytes) throws IOException {

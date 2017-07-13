@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content" >
 
-    <ImageView
+    <com.aopanis.forgetmenot.views.SquareImageView
         android:id="@+id/galleryImageItem"
-        android:layout_height="128dp"
         android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_margin="@dimen/marginGallery"
         android:gravity="center"
         android:adjustViewBounds="true"
         android:scaleType="centerCrop"
         android:background="@color/black" />
 
-</LinearLayout>
+    <ImageView
+        android:id="@+id/galleryLocationIconItem"
+        android:layout_width="@dimen/locIconWidth"
+        android:layout_height="@dimen/locIconHeight"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_margin="@dimen/marginContent"
+        android:src="@drawable/ic_location" />
+
+</RelativeLayout>
