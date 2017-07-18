@@ -6,12 +6,10 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.provider.MediaStore;
-import android.support.annotation.RequiresPermission;
-import android.support.constraint.ConstraintLayout;
-import android.support.media.ExifInterface;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -24,18 +22,13 @@ import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.aopanis.forgetmenot.R;
+import com.aopanis.forgetmenot.helpers.ImageScalingHelper;
 import com.aopanis.forgetmenot.models.GalleryImage;
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.RequestBuilder;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.request.FutureTarget;
-import com.bumptech.glide.request.RequestOptions;
 import com.tzutalin.dlib.Constants;
 import com.tzutalin.dlib.FaceDet;
 import com.tzutalin.dlib.VisionDetRet;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 
 import permissions.dispatcher.NeedsPermission;
@@ -150,12 +143,22 @@ public class ImageActivity extends AppCompatActivity {
             ImageView imageView = (ImageView) activity.findViewById(R.id.imageActionView);
             imageView.setImageBitmap(tempBm);
 
+            Point actualDimensions = ImageScalingHelper.dimensionHelper(imageView, tempBm);
+            float[] ratios = ImageScalingHelper.ratioHelper(actualDimensions, tempBm);
+
+            float xRatio = ratios[0];
+            float yRatio = ratios[1];
+
             for(int i=0; i<result.size(); i++) {
                 Button b = new Button(activity);
-                b.setX(result.get(i).getLeft());
-                b.setY(result.get(i).getTop());
-                b.setWidth(result.get(i).getRight()-result.get(i).getLeft());
-                b.setHeight(result.get(i).getBottom()-result.get(i).getTop());
+                b.setX(xRatio * result.get(i).getLeft());
+                b.setY(yRatio * result.get(i).getTop());
+                int width = (int) Math.ceil(xRatio * (result.get(i).getRight()-result.get(i).getLeft()));
+                int height = (int) Math.ceil(yRatio * (result.get(i).getBottom()-result.get(i).getTop()));
+                b.setMinimumHeight(0);
+                b.setMinimumWidth(0);
+                b.setWidth(width);
+                b.setHeight(height);
                 b.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v){
                         Intent intent = new Intent(activity, PersonActivity.class);
