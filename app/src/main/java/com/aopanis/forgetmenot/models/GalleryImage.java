@@ -1,10 +1,13 @@
 package com.aopanis.forgetmenot.models;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.provider.MediaStore;
 import android.support.media.ExifInterface;
+import android.util.Log;
 
 import com.aopanis.forgetmenot.helpers.FileHelper;
 import com.aopanis.forgetmenot.helpers.GPSHelper;
@@ -13,6 +16,8 @@ import java.io.File;
 import java.io.IOException;
 
 public class GalleryImage implements Parcelable{
+
+    private static String TAG = "GalleryImage";
 
     private String uri;
     private double latitude, longitude;
@@ -68,16 +73,33 @@ public class GalleryImage implements Parcelable{
     public void setLatitude(Double value, Context context) {
         this.latitude = value;
 
-        ExifInterface exifInterface = this.getExif(context);
-        exifInterface.setAttribute(android.media.ExifInterface.TAG_GPS_LATITUDE,
-                GPSHelper.convertToDms(this.latitude));
-        exifInterface.setAttribute(android.media.ExifInterface.TAG_GPS_LATITUDE_REF,
-                GPSHelper.latitudeRefDtS(this.latitude));
-        try {
-            exifInterface.saveAttributes();
-        } catch (IOException e) {
-            e.printStackTrace();
+        // Get an array containing the image ID column that we want
+        String[] projection = { MediaStore.Images.Media.LATITUDE, MediaStore.Images.Media.LONGITUDE };
+        // Create a cursor pointing to the images
+        Cursor cursor = context.getContentResolver().query(
+                this.getUri(),
+                projection,
+                null,
+                null,
+                null);
+
+        int latIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.LATITUDE);
+        int lonIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.LONGITUDE);
+        int size = cursor.getCount();
+
+        // If size is zero, there are no images
+        // TODO: Implement "no images to display" dialogue
+        if(size == 0) {
+            Log.d(TAG, "No images to display");
         }
+
+        double imageLongitude;
+        double imageLatitude;
+
+        cursor.moveToFirst();
+
+        // Close the cursor
+        cursor.close();
     }
     public Double getLongitude() {
         return this.longitude;

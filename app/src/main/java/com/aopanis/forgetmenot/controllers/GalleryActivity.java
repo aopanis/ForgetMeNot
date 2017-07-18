@@ -163,10 +163,9 @@ public class GalleryActivity extends AppCompatActivity {
 
             Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
-            Log.d(TAG, "Initialized variables");
-
             // Get an array containing the image ID column that we want
-            String[] projection = { MediaStore.Images.Media._ID };
+            String[] projection = { MediaStore.Images.Media._ID, MediaStore.Images.Media.LATITUDE,
+                    MediaStore.Images.Media.LONGITUDE };
             // Create a cursor pointing to the images
             Cursor cursor = getContentResolver().query(
                     uri,
@@ -175,10 +174,10 @@ public class GalleryActivity extends AppCompatActivity {
                     null,
                     null);
 
-            int columnIndex = cursor.getColumnIndexOrThrow( MediaStore.Images.Media._ID );
+            int idIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID);
+            int latIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.LATITUDE);
+            int lonIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.LONGITUDE);
             int size = cursor.getCount();
-
-            Log.d(TAG, "Loaded images");
 
             // If size is zero, there are no images
             // TODO: Implement "no images to display" dialogue
@@ -187,6 +186,8 @@ public class GalleryActivity extends AppCompatActivity {
             }
 
             int imageId;
+            double imageLongitude;
+            double imageLatitude;
 
             // If we are not starting from the beginning, move to the position to start from
             if(startPos != -1) {
@@ -199,35 +200,16 @@ public class GalleryActivity extends AppCompatActivity {
 
             while(cursor.moveToPrevious()) {
                 Uri imageUri;
-                double imageLongitude = Double.NaN;
-                double imageLatitude = Double.NaN;
-                InputStream in = null;
-                ExifInterface exifInterface;
 
-                imageId = cursor.getInt(columnIndex);
+                imageId = cursor.getInt(idIndex);
+                imageLatitude = cursor.getDouble(latIndex);
+                imageLongitude = cursor.getDouble(lonIndex);
+                if(imageLatitude == 0.0 && imageLongitude == 0.0) {
+                    imageLatitude = Double.NaN;
+                    imageLongitude = Double.NaN;
+                }
                 // Get the image ID based off of the index retrieved earlier
                 imageUri = uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "" + imageId);
-                try {
-                    in = getContentResolver().openInputStream(imageUri);
-                    exifInterface = new ExifInterface(in);
-                    if(exifInterface.getLatLong() != null) {
-                        imageLatitude = exifInterface.getLatLong()[0];
-                        imageLongitude = exifInterface.getLatLong()[1];
-
-                        Log.d(TAG, "Image loaded with latitude and longitude: " + imageLatitude + ", " + imageLongitude);
-                    } else {
-                        imageLatitude = Double.NaN;
-                        imageLongitude = Double.NaN;
-                    }
-                } catch (IOException e) {
-                    // Handle any errors
-                } finally {
-                    if (in != null) {
-                        try {
-                            in.close();
-                        } catch (IOException ignored) {}
-                    }
-                }
 
                 this.publishProgress(new GalleryImage(imageUri, imageLatitude, imageLongitude, imageId));
             }
