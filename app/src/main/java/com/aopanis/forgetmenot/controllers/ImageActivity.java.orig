@@ -2,10 +2,10 @@ package com.aopanis.forgetmenot.controllers;
 
 import android.Manifest;
 import android.content.Intent;
-
-
+<<<<<<< HEAD
+=======
 import android.database.Cursor;
-
+>>>>>>> 409b2efb997b2898bc9327181f5e194daeaad107
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
