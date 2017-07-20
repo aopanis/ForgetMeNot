@@ -2,10 +2,7 @@ package com.aopanis.forgetmenot.controllers;
 
 import android.Manifest;
 import android.content.Intent;
-
-
 import android.database.Cursor;
-
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -14,27 +11,23 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
-<<<<<<< HEAD
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.media.ExifInterface;
-=======
->>>>>>> 409b2efb997b2898bc9327181f5e194daeaad107
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-<<<<<<< HEAD
-=======
 import android.widget.Button;
->>>>>>> 409b2efb997b2898bc9327181f5e194daeaad107
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.aopanis.forgetmenot.R;
-<<<<<<< HEAD
+import com.aopanis.forgetmenot.helpers.FileHelper;
 import com.aopanis.forgetmenot.helpers.GPSHelper;
+import com.aopanis.forgetmenot.helpers.ImageScalingHelper;
 import com.aopanis.forgetmenot.models.GalleryImage;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestBuilder;
@@ -44,15 +37,12 @@ import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
-=======
-import com.aopanis.forgetmenot.helpers.ImageScalingHelper;
-import com.aopanis.forgetmenot.models.GalleryImage;
->>>>>>> 409b2efb997b2898bc9327181f5e194daeaad107
 import com.tzutalin.dlib.Constants;
 import com.tzutalin.dlib.FaceDet;
 import com.tzutalin.dlib.VisionDetRet;
 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.List;
 
 import permissions.dispatcher.NeedsPermission;
@@ -73,13 +63,13 @@ public class ImageActivity extends AppCompatActivity {
         setContentView(R.layout.activity_image);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
-        ImageView imageView = (ImageView) this.findViewById(R.id.imageActionView);
+        //ImageView imageView = (ImageView) this.findViewById(R.id.imageActionView);
         this.displayedImage = this.getIntent().getParcelableExtra(GalleryActivity.IMAGE_EXTRA);
-
-//        RequestBuilder<Bitmap> requestBuilder = Glide.with(this).asBitmap()
-//                .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.RESOURCE));
-//        requestBuilder.load(this.displayedImage.getUri()).into(imageView);
-
+/*
+        RequestBuilder<Bitmap> requestBuilder = Glide.with(this).asBitmap()
+                .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.RESOURCE));
+        requestBuilder.load(this.displayedImage.getUri()).into(imageView);
+*/
         FloatingActionButton button = (FloatingActionButton) this.findViewById(R.id.tagLocationButton);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -100,7 +90,7 @@ public class ImageActivity extends AppCompatActivity {
         PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
         // If the image already has location data, then set the initial bounds to
         // the location that it already contains with radius of 2000
-        if(!this.displayedImage.getLongitude().isNaN() &&
+        if (!this.displayedImage.getLongitude().isNaN() &&
                 !this.displayedImage.getLatitude().isNaN()) {
             builder.setLatLngBounds(GPSHelper.toBounds(this.displayedImage.getLatitude(),
                     this.displayedImage.getLongitude(), 1000));
@@ -149,21 +139,6 @@ public class ImageActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private String getRealPathFromURI(Uri contentURI) {
-        String result;
-        Cursor cursor = getContentResolver().query(contentURI, null, null, null, null);
-        if (cursor == null) { // Source is Dropbox or other similar local file path
-            result = contentURI.getPath();
-        } else {
-            cursor.moveToFirst();
-            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-            result = cursor.getString(idx);
-            cursor.close();
-        }
-        return result;
-    }
-
-
     protected class AsyncDetectFaces extends AsyncTask<Uri, Integer, List<VisionDetRet>> {
 
         private ImageActivity activity;
@@ -176,31 +151,67 @@ public class ImageActivity extends AppCompatActivity {
 
         @Override
         protected List<VisionDetRet> doInBackground(Uri... params) {
+            long sTime;
+            long eTime;
+            long diff;
+
+            sTime = System.nanoTime();
             FaceDet detector = new FaceDet(Constants.getFaceShapeModelPath());
+            eTime = System.nanoTime();
+            diff = eTime - sTime;
+            Log.i(TAG, "Loading Face Detector: " + diff / 1000000);
 
-            String path = getRealPathFromURI(params[0]);
-
+            sTime = System.nanoTime();
             try {
                 bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), params[0]);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            String path = FileHelper.getRealPathFromURI(displayedImage.getUri(), this.activity);
+            eTime = System.nanoTime();
+            diff = eTime - sTime;
+            Log.i(TAG, "Loading Bitmap: " + diff / 1000000);
 
+            sTime = System.nanoTime();
             Paint p = new Paint();
             p.setStyle(Paint.Style.STROKE);
             p.setStrokeWidth(10);
-            p.setARGB(255,255,255,255);
+            p.setARGB(255, 255, 255, 255);
             tempBm = bitmap.copy(bitmap.getConfig(), true);
             Canvas canvas = new Canvas(tempBm);
-
-            List<VisionDetRet> rets = detector.detect(path);
-            for(int i=0; i < rets.size(); i++) {
-                VisionDetRet temp = rets.get(i);
-                canvas.drawRect(temp.getLeft(), temp.getTop(), temp.getRight(), temp.getBottom(), p);
+            eTime = System.nanoTime();
+            diff = eTime - sTime;
+            Log.i(TAG, "Loading Paint and Canvas: " + diff / 1000000);
+/*
+            // TODO: Scale down bitmap before detecting
+            int bW = bitmap.getWidth();
+            int bH = bitmap.getHeight();
+            float scale = 0.0f;
+            if(bW > 500 && bH > 500) {
+                    scale = bW < bH ? 500f / bW : 500f / bH;
             }
+            this.bitmap = Bitmap.createScaledBitmap(bitmap, (int)(bW * scale), (int)(bH * scale), true);*/
 
-            Log.i(TAG, Integer.toString(rets.get(0).getBottom()));
-            return rets;
+            sTime = System.nanoTime();
+            List<VisionDetRet> rects = detector.detect(path);
+            eTime = System.nanoTime();
+            diff = eTime - sTime;
+            Log.i(TAG, "Detecting Rects: " + diff / 1000000);
+
+            sTime = System.nanoTime();
+            for (int i = 0; i < rects.size(); i++) {
+                VisionDetRet temp = rects.get(i);
+                canvas.drawRect(temp.getLeft(), temp.getTop(),
+                        temp.getRight(), temp.getBottom(), p);/*
+                canvas.drawRect(temp.getLeft() * scale, temp.getTop() * scale,
+                        temp.getRight() * scale, temp.getBottom() * scale, p);*/
+            }
+            eTime = System.nanoTime();
+            diff = eTime - sTime;
+            Log.i(TAG, "Drawing Rects: " + diff / 1000000);
+
+            //Log.i(TAG, Integer.toString(rects.get(0).getBottom()));
+            return rects;
         }
 
         @Override
@@ -210,8 +221,8 @@ public class ImageActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<VisionDetRet> result) {
-            RelativeLayout imageLayout = (RelativeLayout) activity.findViewById(R.id.imageActionLayout);
-            ImageView imageView = (ImageView) activity.findViewById(R.id.imageActionView);
+            ConstraintLayout imageLayout = (ConstraintLayout) activity.findViewById(R.id.imageActionLayout);
+            ImageView imageView = (ImageView) imageLayout.findViewById(R.id.imageActionView);
             imageView.setImageBitmap(tempBm);
 
             Point actualDimensions = ImageScalingHelper.dimensionHelper(imageView, tempBm);
@@ -219,19 +230,25 @@ public class ImageActivity extends AppCompatActivity {
 
             float xRatio = ratios[0];
             float yRatio = ratios[1];
+            float heightMargin = ((float)imageView.getHeight() - actualDimensions.y) / 2;
+            float widthMargin = ((float)imageView.getWidth() - actualDimensions.x) / 2;
 
-            for(int i=0; i<result.size(); i++) {
+            for (int i = 0; i < result.size(); i++) {
                 Button b = new Button(activity);
-                b.setX(xRatio * result.get(i).getLeft());
-                b.setY(yRatio * result.get(i).getTop());
-                int width = (int) Math.ceil(xRatio * (result.get(i).getRight()-result.get(i).getLeft()));
-                int height = (int) Math.ceil(yRatio * (result.get(i).getBottom()-result.get(i).getTop()));
                 b.setMinimumHeight(0);
                 b.setMinimumWidth(0);
+                b.setX(widthMargin + (xRatio * result.get(i).getLeft()));
+                b.setY(heightMargin + (yRatio * result.get(i).getTop()));
+                int width = (int) Math.ceil(xRatio * (result.get(i).getRight() - result.get(i).getLeft()));
+                int height = (int) Math.ceil(yRatio * (result.get(i).getBottom() - result.get(i).getTop()));
+                ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(
+                        width, height);
+                params.setMargins(0, 0, 0, 0);
+                b.setLayoutParams(params);
                 b.setWidth(width);
                 b.setHeight(height);
                 b.setOnClickListener(new View.OnClickListener() {
-                    public void onClick(View v){
+                    public void onClick(View v) {
                         Intent intent = new Intent(activity, PersonActivity.class);
                         startActivity(intent);
                     }
@@ -240,7 +257,6 @@ public class ImageActivity extends AppCompatActivity {
             }
 
             Toast.makeText(activity, "Done", Toast.LENGTH_SHORT).show();
-
         }
     }
 }
