@@ -49,6 +49,7 @@ public class ImageActivity extends AppCompatActivity {
 
         ImageView imageView = (ImageView) this.findViewById(R.id.imageActionView);
         this.displayedImage = this.getIntent().getParcelableExtra(GalleryActivity.IMAGE_EXTRA);
+        imageView.setImageURI(displayedImage.getUri());
 
 //        RequestBuilder<Bitmap> requestBuilder = Glide.with(this).asBitmap()
 //                .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.RESOURCE));
