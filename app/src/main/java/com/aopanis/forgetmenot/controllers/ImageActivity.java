@@ -98,7 +98,8 @@ public class ImageActivity extends AppCompatActivity {
 
         private ImageActivity activity;
         private Bitmap bitmap = null;
-        private Bitmap tempBm;
+        private Bitmap faceRects;
+        private Uri uri;
 
         public AsyncDetectFaces(ImageActivity activity) {
             this.activity = activity;
@@ -108,7 +109,8 @@ public class ImageActivity extends AppCompatActivity {
         protected List<VisionDetRet> doInBackground(Uri... params) {
             FaceDet detector = new FaceDet(Constants.getFaceShapeModelPath());
 
-            String path = getRealPathFromURI(params[0]);
+            uri = params[0];
+            String path = getRealPathFromURI(uri);
 
             try {
                 bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), params[0]);
@@ -120,10 +122,10 @@ public class ImageActivity extends AppCompatActivity {
             p.setStyle(Paint.Style.STROKE);
             p.setStrokeWidth(10);
             p.setARGB(255,255,255,255);
-            tempBm = bitmap.copy(bitmap.getConfig(), true);
-            Canvas canvas = new Canvas(tempBm);
+            faceRects = bitmap.copy(bitmap.getConfig(), true);
+            Canvas canvas = new Canvas(faceRects);
 
-            List<VisionDetRet> rets = detector.detect(path);
+            List<VisionDetRet> rets = detector.detect(bitmap);
             for(int i=0; i < rets.size(); i++) {
                 VisionDetRet temp = rets.get(i);
                 canvas.drawRect(temp.getLeft(), temp.getTop(), temp.getRight(), temp.getBottom(), p);
@@ -142,10 +144,10 @@ public class ImageActivity extends AppCompatActivity {
         protected void onPostExecute(List<VisionDetRet> result) {
             RelativeLayout imageLayout = (RelativeLayout) activity.findViewById(R.id.imageActionLayout);
             ImageView imageView = (ImageView) activity.findViewById(R.id.imageActionView);
-            imageView.setImageBitmap(tempBm);
+            imageView.setImageBitmap(faceRects);
 
-            Point actualDimensions = ImageScalingHelper.dimensionHelper(imageView, tempBm);
-            float[] ratios = ImageScalingHelper.ratioHelper(actualDimensions, tempBm);
+            Point actualDimensions = ImageScalingHelper.dimensionHelper(imageView, faceRects);
+            float[] ratios = ImageScalingHelper.ratioHelper(actualDimensions, faceRects);
 
             float xRatio = ratios[0];
             float yRatio = ratios[1];
@@ -163,6 +165,9 @@ public class ImageActivity extends AppCompatActivity {
                 b.setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v){
                         Intent intent = new Intent(activity, PersonActivity.class);
+                        //Pass Processed image to new activity
+                        Log.d(TAG, uri.toString());
+                        intent.putExtra("ProcessedImageURI", uri);
                         startActivity(intent);
                     }
                 });
