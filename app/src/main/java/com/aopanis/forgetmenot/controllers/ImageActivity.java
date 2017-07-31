@@ -51,6 +51,7 @@ public class ImageActivity extends AppCompatActivity {
         this.displayedImage = this.getIntent().getParcelableExtra(GalleryActivity.IMAGE_EXTRA);
         imageView.setImageURI(displayedImage.getUri());
 
+
 //        RequestBuilder<Bitmap> requestBuilder = Glide.with(this).asBitmap()
 //                .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.RESOURCE));
 //        requestBuilder.load(this.displayedImage.getUri()).into(imageView);
@@ -79,20 +80,6 @@ public class ImageActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private String getRealPathFromURI(Uri contentURI) {
-        String result;
-        Cursor cursor = getContentResolver().query(contentURI, null, null, null, null);
-        if (cursor == null) { // Source is Dropbox or other similar local file path
-            result = contentURI.getPath();
-        } else {
-            cursor.moveToFirst();
-            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-            result = cursor.getString(idx);
-            cursor.close();
-        }
-        return result;
-    }
-
 
     protected class AsyncDetectFaces extends AsyncTask<Uri, Integer, List<VisionDetRet>> {
 
@@ -110,10 +97,9 @@ public class ImageActivity extends AppCompatActivity {
             FaceDet detector = new FaceDet(Constants.getFaceShapeModelPath());
 
             uri = params[0];
-            String path = getRealPathFromURI(uri);
 
             try {
-                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), params[0]);
+                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -125,6 +111,7 @@ public class ImageActivity extends AppCompatActivity {
             faceRects = bitmap.copy(bitmap.getConfig(), true);
             Canvas canvas = new Canvas(faceRects);
 
+            // TODO optimize face detector by scaling image
             List<VisionDetRet> rets = detector.detect(bitmap);
             for(int i=0; i < rets.size(); i++) {
                 VisionDetRet temp = rets.get(i);
@@ -152,6 +139,7 @@ public class ImageActivity extends AppCompatActivity {
             float xRatio = ratios[0];
             float yRatio = ratios[1];
 
+            // TODO Fix Buttons being slightly smaller than border
             for(int i=0; i<result.size(); i++) {
                 Button b = new Button(activity);
                 b.setX(xRatio * result.get(i).getLeft());
@@ -171,6 +159,7 @@ public class ImageActivity extends AppCompatActivity {
                         startActivity(intent);
                     }
                 });
+                b.setAlpha(0);
                 imageLayout.addView(b);
             }
 
